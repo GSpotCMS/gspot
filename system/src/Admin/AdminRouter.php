@@ -187,10 +187,22 @@ class AdminRouter
             }
         }
 
+        $mudPatterns = [];
+        $registry = $this->mudPatternRegistry();
+        if ($registry !== null) {
+            foreach ($registry->all() as $p) {
+                $mudPatterns[] = [
+                    'slug' => $p['slug'] ?? '',
+                    'title' => $p['title'] ?? ($p['slug'] ?? ''),
+                ];
+            }
+        }
+
         return new Response($this->render('editor', [
             'slug' => $slug,
             'content' => $rawContent,
             'isNew' => empty($slug),
+            'mudPatterns' => $mudPatterns,
         ]));
     }
 
@@ -564,6 +576,46 @@ HTML;
         $heading = $data['isNew'] ? 'New Page' : 'Edit: ' . $slug;
         $action = $data['isNew'] ? 'new' : 'edit';
 
+        $mudInsert = '';
+        $patterns = $data['mudPatterns'] ?? [];
+        if ($patterns !== []) {
+            $opts = '';
+            foreach ($patterns as $p) {
+                $ps = htmlspecialchars($p['slug']);
+                $pt = htmlspecialchars($p['title']);
+                $opts .= "<option value=\"{$ps}\">{$pt} ({$ps})</option>";
+            }
+            $mudInsert = <<<HTML
+<div class="form-group mud-shortcode-insert">
+    <label>Insert MUD pattern shortcode</label>
+    <div style="display:flex;gap:0.5rem;flex-wrap:wrap;align-items:center">
+        <select id="mud-page-pattern">{$opts}</select>
+        <button type="button" class="btn btn-sm" id="mud-page-pattern-insert">Insert at cursor</button>
+        <a class="btn btn-sm" href="{$data['prefix']}/mud/patterns" target="_blank" rel="noopener">Pattern library</a>
+    </div>
+    <small class="muted">Adds <code>[mud-pattern slug="…"]</code> — use template <code>mud</code> in frontmatter for fence CSS.</small>
+</div>
+<script>
+(function() {
+  const btn = document.getElementById('mud-page-pattern-insert');
+  const sel = document.getElementById('mud-page-pattern');
+  const ta = document.querySelector('textarea[name="content"]');
+  if (!btn || !sel || !ta) return;
+  btn.addEventListener('click', function() {
+    const slug = sel.value;
+    if (!slug) return;
+    const block = '\\n\\n[mud-pattern slug="' + slug + '"]\\n\\n';
+    const start = ta.selectionStart ?? ta.value.length;
+    const end = ta.selectionEnd ?? start;
+    ta.value = ta.value.slice(0, start) + block + ta.value.slice(end);
+    ta.focus();
+    ta.selectionStart = ta.selectionEnd = start + block.length;
+  });
+})();
+</script>
+HTML;
+        }
+
         return <<<HTML
 <h1>{$heading}</h1>
 <form method="POST" action="{$data['prefix']}/pages/{$action}" class="editor-form">
@@ -573,6 +625,7 @@ HTML;
         <label>Slug</label>
         <input type="text" name="slug" value="{$slug}" {$this->readonlyIf(!$data['isNew'])} required>
     </div>
+    {$mudInsert}
     <div class="form-group">
         <label>Content (Markdown + YAML frontmatter)</label>
         <textarea name="content" class="code-editor" rows="25">{$content}</textarea>

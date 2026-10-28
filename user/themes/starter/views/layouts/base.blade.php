@@ -7,7 +7,7 @@
     @if(isset($theme) && $theme->cssVariables())
     <style id="gspot-theme-vars">{!! $theme->cssVariables() !!}</style>
     @endif
-    <link rel="stylesheet" href="/assets/css/main.css">
+    <link rel="stylesheet" href="{{ $theme->assetUrl('css/main.css') }}">
 </head>
 <body>
     <header class="site-header">
@@ -24,6 +24,6 @@
         <p>Powered by <a href="https://gspotcms.com">GSpot CMS</a> v{{ $site['version'] }}</p>
     </footer>
 
-    <script src="/assets/js/main.js"></script>
+    <script src="{{ $theme->assetUrl('js/main.js') }}"></script>
 </body>
 </html>

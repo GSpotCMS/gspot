@@ -32,9 +32,9 @@
 - [x] Dependency audit (`composer audit` in CI)
 
 ### Performance
-- [ ] Page caching layer (configurable TTL)
-- [ ] Compiled view caching (already implemented)
-- [ ] Static asset versioning
+- [x] Page caching layer (configurable TTL, mtime-aware keys)
+- [x] Compiled view caching (already implemented)
+- [x] Static asset versioning (theme assetUrl + plugin CSS query)
 - [ ] Opcache recommendations in docs
 
 ### Promo Site

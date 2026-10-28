@@ -30,6 +30,16 @@ class ThemeManager
         return $this->themesPath . '/' . $this->activeTheme . '/assets';
     }
 
+    /** Public URL for a theme asset with cache-busting filemtime query. */
+    public function assetUrl(string $relativePath): string
+    {
+        $relativePath = ltrim($relativePath, '/');
+        $file = $this->assetPath() . '/' . $relativePath;
+        $version = is_file($file) ? (string) filemtime($file) : (string) time();
+
+        return '/assets/' . $relativePath . '?v=' . $version;
+    }
+
     public function manifest(): array
     {
         return $this->manifest;

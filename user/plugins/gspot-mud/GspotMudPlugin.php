@@ -17,7 +17,9 @@ class GspotMudPlugin extends AbstractPlugin
         require_once __DIR__ . '/classes/MudPatternRegistry.php';
         require_once __DIR__ . '/classes/MudPatternRenderer.php';
 
-        $app->renderer()->share('gspotMudCss', '/plugin-assets/gspot-mud/css/gspot-mud-fences.css');
+        $cssFile = __DIR__ . '/assets/css/gspot-mud-fences.css';
+        $ver = is_file($cssFile) ? filemtime($cssFile) : time();
+        $app->renderer()->share('gspotMudCss', '/plugin-assets/gspot-mud/css/gspot-mud-fences.css?v=' . $ver);
     }
 
     public function onPageRender(Page &$page): void

@@ -6,7 +6,7 @@ description: AI-native MCP tooling in GSpot CMS
 
 # MCP Tools
 
-GSpot CMS is MCP-native. The Model Context Protocol server ships in core and provides 20 tools for AI-driven content management.
+GSpot CMS is MCP-native. The Model Context Protocol server ships in core and provides 23+ tools for AI-driven content management.
 
 ## Setup
 
@@ -63,12 +63,19 @@ Add to your Cursor MCP config (`~/.cursor/mcp.json`):
 | `gspot_list_media` | List media files |
 | `gspot_upload_media` | Upload file (base64) |
 
+### MUD Patterns (gspot-mud plugin)
+| Tool | Description |
+|------|-------------|
+| `gspot_list_mud_patterns` | List HTML pattern library |
+| `gspot_get_mud_pattern` | Get pattern metadata + HTML body |
+| `gspot_save_mud_pattern` | Create or update a pattern |
+
 ### System
 | Tool | Description |
 |------|-------------|
 | `gspot_backup` | Create zip backup of user directory |
 | `gspot_restore` | List available backups |
-| `gspot_cache_clear` | Clear view cache |
+| `gspot_cache_clear` | Clear view + page cache |
 
 ## Example Workflow
 

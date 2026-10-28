@@ -632,6 +632,83 @@ class MCPServer
             return "Theme '{$name}' scaffolded at user/themes/{$name}/";
         });
 
+        $this->registerTool('gspot_list_mud_patterns', [
+            'description' => 'List GSpot MUD HTML patterns (requires gspot-mud plugin)',
+            'inputSchema' => ['type' => 'object', 'properties' => []],
+        ], function (array $args): string {
+            $registry = $this->mudPatternRegistry();
+            if ($registry === null) {
+                return 'Error: gspot-mud plugin not installed.';
+            }
+            $list = array_map(static fn ($p) => [
+                'slug' => $p['slug'] ?? '',
+                'title' => $p['title'] ?? '',
+                'category' => $p['category'] ?? 'general',
+                'description' => $p['description'] ?? '',
+            ], $registry->all());
+
+            return json_encode($list, JSON_PRETTY_PRINT);
+        });
+
+        $this->registerTool('gspot_get_mud_pattern', [
+            'description' => 'Get one MUD pattern metadata and HTML body',
+            'inputSchema' => [
+                'type' => 'object',
+                'properties' => [
+                    'slug' => ['type' => 'string', 'description' => 'Pattern slug'],
+                ],
+                'required' => ['slug'],
+            ],
+        ], function (array $args): string {
+            $registry = $this->mudPatternRegistry();
+            if ($registry === null) {
+                return 'Error: gspot-mud plugin not installed.';
+            }
+            $slug = PathGuard::sanitizeSlug($args['slug']);
+            $pattern = $registry->get($slug);
+            if ($pattern === null) {
+                return "Error: Pattern '{$slug}' not found.";
+            }
+            unset($pattern['dir']);
+
+            return json_encode($pattern, JSON_PRETTY_PRINT);
+        });
+
+        $this->registerTool('gspot_save_mud_pattern', [
+            'description' => 'Create or update a MUD HTML pattern',
+            'inputSchema' => [
+                'type' => 'object',
+                'properties' => [
+                    'slug' => ['type' => 'string'],
+                    'title' => ['type' => 'string'],
+                    'category' => ['type' => 'string'],
+                    'description' => ['type' => 'string'],
+                    'html' => ['type' => 'string', 'description' => 'Pattern HTML body'],
+                ],
+                'required' => ['slug', 'title', 'html'],
+            ],
+        ], function (array $args): string {
+            $registry = $this->mudPatternRegistry();
+            if ($registry === null) {
+                return 'Error: gspot-mud plugin not installed.';
+            }
+            $slug = PathGuard::sanitizeSlug($args['slug']);
+            if ($slug === '') {
+                return 'Error: Invalid slug.';
+            }
+            try {
+                $registry->save($slug, [
+                    'title' => $args['title'],
+                    'category' => $args['category'] ?? 'general',
+                    'description' => $args['description'] ?? '',
+                ], $args['html']);
+            } catch (\InvalidArgumentException $e) {
+                return 'Error: ' . $e->getMessage();
+            }
+
+            return "Pattern '{$slug}' saved.";
+        });
+
         $this->registerTool('gspot_cache_clear', [
             'description' => 'Clear compiled views and page cache',
             'inputSchema' => ['type' => 'object', 'properties' => []],
@@ -657,6 +734,18 @@ class MCPServer
             ];
             return json_encode($info, JSON_PRETTY_PRINT);
         });
+    }
+
+    private function mudPatternRegistry(): ?\GSpot\UserPlugins\GspotMud\MudPatternRegistry
+    {
+        $pluginDir = $this->app->rootPath() . '/user/plugins/gspot-mud';
+        if (!is_dir($pluginDir)) {
+            return null;
+        }
+
+        require_once $pluginDir . '/classes/MudPatternRegistry.php';
+
+        return new \GSpot\UserPlugins\GspotMud\MudPatternRegistry($pluginDir . '/data/patterns');
     }
 
     private function addDirToZip(\ZipArchive $zip, string $dir, string $prefix, array $exclude = []): void

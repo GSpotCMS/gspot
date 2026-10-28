@@ -16,7 +16,7 @@ use Illuminate\Container\Container;
 
 class Application
 {
-    public const VERSION = '0.1.0-alpha';
+    public const VERSION = '0.2.0';
 
     private static ?self $instance = null;
 
@@ -106,13 +106,47 @@ class Application
 
         $page = $route->getPage();
 
+        $cacheKey = null;
+        if ($method === 'GET' && $this->pageCacheEnabled()) {
+            $cacheKey = $this->pageCacheKey($uri, $page);
+            $cached = $this->cache->get($cacheKey);
+            if (is_string($cached) && $cached !== '') {
+                return $cached;
+            }
+        }
+
         $this->events->dispatch('onPageRender', $page);
 
-        return $this->renderer->render($page->getTemplate(), [
+        $html = $this->renderer->render($page->getTemplate(), [
             'page' => $page,
             'site' => $this->siteData(),
             'config' => $this->config,
         ]);
+
+        if ($cacheKey !== null) {
+            $ttl = (int) $this->config->get('system.cache.ttl', 3600);
+            $this->cache->set($cacheKey, $html, $ttl);
+        }
+
+        return $html;
+    }
+
+    private function pageCacheEnabled(): bool
+    {
+        return (bool) $this->config->get('system.cache.enabled', false);
+    }
+
+    private function pageCacheKey(string $uri, \GSpot\Router\Page $page): string
+    {
+        $mtime = 0;
+        $path = $page->filePath();
+        if ($path !== '' && is_file($path)) {
+            $mtime = (int) filemtime($path);
+        }
+
+        $theme = (string) $this->config->get('system.theme', 'starter');
+
+        return 'page:' . hash('sha256', $uri . '|' . $theme . '|' . $mtime);
     }
 
     public function config(): ConfigManager

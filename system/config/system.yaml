@@ -1,7 +1,7 @@
 theme: starter
 timezone: UTC
 cache:
-  enabled: false
+  enabled: true
   ttl: 3600
 admin:
   prefix: gspot-admin

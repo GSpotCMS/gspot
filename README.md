@@ -11,13 +11,25 @@ A flat-file, MCP-native PHP content management system.
 
 ## Quick Start
 
+From GitHub (until [Packagist](https://packagist.org) is live):
+
 ```bash
-composer create-project gspot/gspot my-site
+composer create-project gspot/gspot my-site --repository='{"type":"vcs","url":"https://github.com/GSpotCMS/gspot"}'
 cd my-site
-php bin/gspot serve
+composer install
+composer serve
 ```
 
-Visit `http://localhost:8080` and start building.
+Or clone and install:
+
+```bash
+git clone https://github.com/GSpotCMS/gspot.git my-site
+cd my-site
+composer install
+composer serve
+```
+
+Visit `http://localhost:8080` · admin at `/gspot-admin/` (change default password immediately).
 
 ## Directory Structure
 
