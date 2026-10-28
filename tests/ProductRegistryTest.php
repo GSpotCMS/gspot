@@ -15,6 +15,7 @@ final class ProductRegistryTest extends TestCase
     {
         require_once dirname(__DIR__) . '/user/plugins/commerce/classes/ProductRegistry.php';
         $this->dir = sys_get_temp_dir() . '/gspot-products-' . uniqid('', true);
+        mkdir($this->dir, 0755, true);
     }
 
     protected function tearDown(): void
