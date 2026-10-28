@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.1.4 — 2026-10-28
+
+- **Synthwave theme:** night-drive home arena (HUD masthead, marquee, hero stage + EQ, neon lanes, module deck); Orbitron webfont; BPM-synced pulse.
+
 ## 1.1.3 — 2026-10-28
 
 - **Editorial theme:** full magazine front page (masthead, hero + rail, card grid); article pages use two-column layout.
