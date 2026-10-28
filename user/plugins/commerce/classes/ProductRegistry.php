@@ -76,10 +76,48 @@ final class ProductRegistry
             'image' => (string) ($meta['image'] ?? ''),
             'active' => (bool) ($meta['active'] ?? true),
             'stripe_price_id' => (string) ($meta['stripe_price_id'] ?? ''),
+            'stock' => $this->normalizeStock($meta['stock'] ?? null),
             'updated' => date('c'),
         ];
 
         file_put_contents($dir . '/product.yaml', Yaml::dump($product, 2));
+    }
+
+    public function availableStock(string $slug): ?int
+    {
+        $product = $this->get($slug);
+        if ($product === null) {
+            return null;
+        }
+
+        if (!array_key_exists('stock', $product) || $product['stock'] === null) {
+            return null;
+        }
+
+        return max(0, (int) $product['stock']);
+    }
+
+    public function adjustStock(string $slug, int $delta): bool
+    {
+        $product = $this->get($slug);
+        if ($product === null) {
+            return false;
+        }
+
+        if (!array_key_exists('stock', $product) || $product['stock'] === null) {
+            return true;
+        }
+
+        $stock = (int) $product['stock'];
+        $next = $stock + $delta;
+        if ($next < 0) {
+            return false;
+        }
+
+        $product['stock'] = $next;
+        $this->save($slug, $product);
+
+        return true;
     }
 
     public function delete(string $slug): bool
@@ -116,5 +154,14 @@ final class ProductRegistry
         $meta['slug'] = $meta['slug'] ?? basename($dir);
 
         return $meta;
+    }
+
+    private function normalizeStock(mixed $stock): ?int
+    {
+        if ($stock === null || $stock === '') {
+            return null;
+        }
+
+        return max(0, (int) $stock);
     }
 }

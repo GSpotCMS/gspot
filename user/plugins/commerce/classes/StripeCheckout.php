@@ -24,8 +24,11 @@ final class StripeCheckout
         return $this->secretKey !== '';
     }
 
-    /** @param list<array{product: array<string, mixed>, qty: int}> $lines */
-    public function createSession(array $lines, string $defaultCurrency): Session
+    /**
+     * @param list<array{product: array<string, mixed>, qty: int}> $lines
+     * @param array{coupon?: string, cart?: string} $metadata
+     */
+    public function createSession(array $lines, string $defaultCurrency, array $metadata = []): Session
     {
         if (!$this->isConfigured()) {
             throw new \RuntimeException('Stripe secret key not configured');
@@ -59,11 +62,25 @@ final class StripeCheckout
             ];
         }
 
-        return Session::create([
+        $meta = [];
+        if (($metadata['coupon'] ?? '') !== '') {
+            $meta['gspot_coupon'] = substr((string) $metadata['coupon'], 0, 32);
+        }
+        if (($metadata['cart'] ?? '') !== '') {
+            $meta['gspot_cart'] = substr((string) $metadata['cart'], 0, 500);
+        }
+
+        $payload = [
             'mode' => 'payment',
             'line_items' => $lineItems,
             'success_url' => $this->successUrl,
             'cancel_url' => $this->cancelUrl,
-        ]);
+            'allow_promotion_codes' => true,
+        ];
+        if ($meta !== []) {
+            $payload['metadata'] = $meta;
+        }
+
+        return Session::create($payload);
     }
 }

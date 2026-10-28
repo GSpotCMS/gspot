@@ -22,6 +22,9 @@ class CommercePlugin extends AbstractPlugin
         require_once __DIR__ . '/classes/StripeCheckout.php';
         require_once __DIR__ . '/classes/OrderRegistry.php';
         require_once __DIR__ . '/classes/StripeWebhook.php';
+        require_once __DIR__ . '/classes/CouponRegistry.php';
+        require_once __DIR__ . '/classes/DiscountCalculator.php';
+        require_once __DIR__ . '/classes/OrderReceiptNotifier.php';
 
         $this->app->renderer()->addViewPath(__DIR__ . '/views');
         $this->app->renderer()->share('commerceCss', '/plugin-assets/commerce/css/shop.css');
@@ -74,6 +77,8 @@ HTML;
             $path === '/commerce/checkout' && $request->isMethod('POST') => $this->checkout($request),
             $path === '/commerce/cart/add' && $request->isMethod('POST') => $this->cartAdd($request),
             $path === '/commerce/cart/update' && $request->isMethod('POST') => $this->cartUpdate($request),
+            $path === '/commerce/cart/coupon' && $request->isMethod('POST') => $this->cartCoupon($request),
+            $path === '/commerce/cart/coupon/remove' && $request->isMethod('POST') => $this->cartCouponRemove($request),
             $path === '/commerce/success' => $this->success($request),
             $path === '/commerce/webhook/stripe' && $request->isMethod('POST') => $this->stripeWebhook($request),
             str_starts_with($path, '/commerce/product/') => $this->product($path),
@@ -93,7 +98,12 @@ HTML;
 
     public function cart(): Cart
     {
-        return $this->cart ??= new Cart($this->registry());
+        return $this->cart ??= new Cart($this->registry(), $this->coupons());
+    }
+
+    public function coupons(): CouponRegistry
+    {
+        return new CouponRegistry($this->couponsDir());
     }
 
     private function shop(Request $request): Response
@@ -120,9 +130,14 @@ HTML;
 
     private function cartPage(Request $request): Response
     {
+        $coupon = $this->cart()->appliedCoupon();
+
         return new Response($this->renderView('cart', [
             'lines' => $this->cart()->lines(),
             'subtotal_cents' => $this->cart()->subtotalCents(),
+            'discount_cents' => $this->cart()->discountCents(),
+            'total_cents' => $this->cart()->totalCents(),
+            'coupon' => $coupon,
             'stripe_ready' => $this->stripe()->isConfigured(),
             'site' => $this->siteData(),
         ]));
@@ -153,6 +168,32 @@ HTML;
         return new RedirectResponse('/commerce/cart');
     }
 
+    private function cartCoupon(Request $request): Response
+    {
+        $error = $this->cart()->applyCoupon((string) $request->request->get('code', ''));
+        if ($error !== null) {
+            return new Response($this->renderView('cart', [
+                'lines' => $this->cart()->lines(),
+                'subtotal_cents' => $this->cart()->subtotalCents(),
+                'discount_cents' => $this->cart()->discountCents(),
+                'total_cents' => $this->cart()->totalCents(),
+                'coupon' => $this->cart()->appliedCoupon(),
+                'stripe_ready' => $this->stripe()->isConfigured(),
+                'error' => $error,
+                'site' => $this->siteData(),
+            ]), 422);
+        }
+
+        return new RedirectResponse('/commerce/cart');
+    }
+
+    private function cartCouponRemove(Request $request): Response
+    {
+        $this->cart()->removeCoupon();
+
+        return new RedirectResponse('/commerce/cart');
+    }
+
     private function checkout(Request $request): Response
     {
         if ($this->cart()->isEmpty()) {
@@ -160,11 +201,24 @@ HTML;
         }
 
         try {
+            $cartSnap = json_encode($this->cart()->snapshotForOrder()) ?: '[]';
+            $coupon = $this->cart()->appliedCoupon();
+            $discount = $this->cart()->discountCents();
+            $lines = $this->cart()->lines();
+            if ($discount > 0) {
+                $lines = (new DiscountCalculator())->applyToLines($lines, $discount);
+            }
+
             $session = $this->stripe()->createSession(
-                $this->cart()->lines(),
+                $lines,
                 $this->defaultCurrency(),
+                [
+                    'coupon' => (string) ($coupon['code'] ?? ''),
+                    'cart' => $cartSnap,
+                ],
             );
             $this->cart()->clear();
+            $this->cart()->removeCoupon();
 
             $url = $session->url ?? '';
             if ($url === '') {
@@ -176,6 +230,9 @@ HTML;
             return new Response($this->renderView('cart', [
                 'lines' => $this->cart()->lines(),
                 'subtotal_cents' => $this->cart()->subtotalCents(),
+                'discount_cents' => $this->cart()->discountCents(),
+                'total_cents' => $this->cart()->totalCents(),
+                'coupon' => $this->cart()->appliedCoupon(),
                 'stripe_ready' => $this->stripe()->isConfigured(),
                 'error' => $e->getMessage(),
                 'site' => $this->siteData(),
@@ -202,6 +259,9 @@ HTML;
                 $this->stripeSecret(),
                 $this->webhookSecret(),
                 $this->orders(),
+                $this->registry(),
+                $this->coupons(),
+                $this->receiptNotifier(),
             );
             $handler->handle($request->getContent(), $request->headers->get('Stripe-Signature'));
 
@@ -255,6 +315,33 @@ HTML;
         $rel = (string) ($this->config['config']['orders_path'] ?? 'data/orders');
 
         return __DIR__ . '/' . ltrim($rel, '/');
+    }
+
+    private function couponsDir(): string
+    {
+        $rel = (string) ($this->config['config']['coupons_path'] ?? 'data/coupons');
+
+        return __DIR__ . '/' . ltrim($rel, '/');
+    }
+
+    private function receiptsDir(): string
+    {
+        $rel = (string) ($this->config['config']['receipts_path'] ?? 'data/receipts');
+
+        return __DIR__ . '/' . ltrim($rel, '/');
+    }
+
+    private function receiptNotifier(): OrderReceiptNotifier
+    {
+        $env = (string) ($this->config['config']['notify_email_env'] ?? 'COMMERCE_NOTIFY_EMAIL');
+        $fromEnv = getenv($env) ?: ($_ENV[$env] ?? '');
+        $email = is_string($fromEnv) ? trim($fromEnv) : '';
+
+        return new OrderReceiptNotifier(
+            $this->receiptsDir(),
+            $email,
+            (string) $this->app->config()->get('site.title', 'GSpot Shop'),
+        );
     }
 
     /** @param array<string, mixed> $data */

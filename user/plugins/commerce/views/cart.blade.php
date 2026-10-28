@@ -35,13 +35,32 @@
                 @endforeach
                 </tbody>
             </table>
-            <p class="commerce-subtotal"><strong>Subtotal:</strong> AUD {{ number_format($subtotal_cents / 100, 2) }}</p>
+            <p class="commerce-subtotal"><strong>Subtotal:</strong> {{ number_format(($subtotal_cents ?? 0) / 100, 2) }}</p>
             <button type="submit">Update quantities</button>
         </form>
+
+        <section class="commerce-coupon">
+            @if(!empty($coupon))
+                <p>Coupon <code>{{ $coupon['code'] ?? '' }}</code> applied
+                    (−{{ number_format(($discount_cents ?? 0) / 100, 2) }})</p>
+                <form method="POST" action="/commerce/cart/coupon/remove">
+                    <button type="submit" class="commerce-coupon-remove">Remove coupon</button>
+                </form>
+            @else
+                <form method="POST" action="/commerce/cart/coupon" class="commerce-coupon-form">
+                    <label>Coupon <input name="code" placeholder="TEAMDC10" autocomplete="off"></label>
+                    <button type="submit">Apply</button>
+                </form>
+            @endif
+        </section>
+
+        <p class="commerce-total"><strong>Total:</strong> {{ number_format(($total_cents ?? $subtotal_cents) / 100, 2) }}</p>
+
         @if($stripe_ready)
             <form method="POST" action="/commerce/checkout" style="margin-top:1rem">
                 <button type="submit" class="commerce-checkout">Checkout with Stripe</button>
             </form>
+            <p class="commerce-note">Stripe promotion codes also work at checkout.</p>
         @else
             <p class="commerce-note">Set <code>STRIPE_SECRET_KEY</code> in your environment to enable checkout.</p>
         @endif

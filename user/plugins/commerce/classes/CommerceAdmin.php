@@ -50,27 +50,30 @@ HTML;
             $price = number_format(((int) ($p['price_cents'] ?? 0)) / 100, 2);
             $cur = strtoupper($p['currency'] ?? 'aud');
             $active = ($p['active'] ?? true) ? 'Yes' : 'No';
+            $stockLabel = !array_key_exists('stock', $p) || $p['stock'] === null ? '∞' : (string) (int) $p['stock'];
             $rows .= <<<HTML
 <tr>
   <td><strong>{$title}</strong></td>
   <td><code>{$slug}</code></td>
   <td>{$cur} {$price}</td>
+  <td>{$stockLabel}</td>
   <td>{$active}</td>
   <td><a class="btn btn-sm" href="{$prefix}/commerce/products/edit?slug={$slug}">Edit</a></td>
 </tr>
 HTML;
         }
         if ($rows === '') {
-            $rows = '<tr><td colspan="5" class="empty">No products yet.</td></tr>';
+            $rows = '<tr><td colspan="6" class="empty">No products yet.</td></tr>';
         }
 
         return <<<HTML
 <h1>🛒 Commerce — Products</h1>
 <p><a class="btn btn-primary" href="{$prefix}/commerce/products/new">+ New product</a>
    <a class="btn" href="{$prefix}/commerce/orders">Orders</a>
+   <a class="btn" href="{$prefix}/commerce/coupons">Coupons</a>
    <a class="btn" href="/commerce/shop" target="_blank" rel="noopener">View shop</a></p>
 <table class="admin-table">
-  <thead><tr><th>Title</th><th>Slug</th><th>Price</th><th>Active</th><th></th></tr></thead>
+  <thead><tr><th>Title</th><th>Slug</th><th>Price</th><th>Stock</th><th>Active</th><th></th></tr></thead>
   <tbody>{$rows}</tbody>
 </table>
 HTML;
@@ -89,6 +92,9 @@ HTML;
         $image = htmlspecialchars($product['image'] ?? '');
         $stripePrice = htmlspecialchars($product['stripe_price_id'] ?? '');
         $active = ($product['active'] ?? true) ? 'checked' : '';
+        $stockVal = array_key_exists('stock', $product) && $product['stock'] !== null
+            ? (string) (int) $product['stock']
+            : '';
         $readonly = $isNew ? '' : 'readonly';
         $heading = $isNew ? 'New product' : 'Edit product';
 
@@ -115,10 +121,101 @@ HTML;
     <div class="form-group"><label>Currency</label><input name="currency" value="{$currency}" maxlength="3"></div>
     <div class="form-group"><label>Image URL/path</label><input name="image" value="{$image}" placeholder="/media/product.png"></div>
     <div class="form-group"><label>Stripe Price ID (optional)</label><input name="stripe_price_id" value="{$stripePrice}" placeholder="price_..."></div>
+    <div class="form-group"><label>Stock (blank = unlimited)</label><input name="stock" value="{$stockVal}" type="number" min="0" step="1"></div>
     <div class="form-group"><label><input type="checkbox" name="active" value="1" {$active}> Active</label></div>
   </div>
   <button type="submit" class="btn btn-primary">Save</button>
   <a class="btn" href="{$prefix}/commerce/products">Back</a>
+</form>
+{$delete}
+HTML;
+    }
+
+    public function couponsListContent(): string
+    {
+        $prefix = $this->adminPrefix();
+        $rows = '';
+        foreach ($this->coupons()->all() as $c) {
+            $code = htmlspecialchars($c['code'] ?? '');
+            $type = htmlspecialchars($c['type'] ?? 'percent');
+            $amount = (int) ($c['amount'] ?? 0);
+            $label = $type === 'fixed' ? 'AUD ' . number_format($amount / 100, 2) : $amount . '%';
+            $uses = (int) ($c['uses'] ?? 0);
+            $max = $c['max_uses'] ?? '∞';
+            $active = ($c['active'] ?? true) ? 'Yes' : 'No';
+            $rows .= <<<HTML
+<tr>
+  <td><code>{$code}</code></td>
+  <td>{$label}</td>
+  <td>{$uses} / {$max}</td>
+  <td>{$active}</td>
+  <td><a class="btn btn-sm" href="{$prefix}/commerce/coupons/edit?code={$code}">Edit</a></td>
+</tr>
+HTML;
+        }
+        if ($rows === '') {
+            $rows = '<tr><td colspan="5" class="empty">No coupons yet.</td></tr>';
+        }
+
+        return <<<HTML
+<h1>🛒 Commerce — Coupons</h1>
+<p><a class="btn btn-primary" href="{$prefix}/commerce/coupons/new">+ New coupon</a>
+   <a class="btn" href="{$prefix}/commerce/products">Products</a></p>
+<table class="admin-table">
+  <thead><tr><th>Code</th><th>Discount</th><th>Uses</th><th>Active</th><th></th></tr></thead>
+  <tbody>{$rows}</tbody>
+</table>
+HTML;
+    }
+
+    public function couponEditContent(string $code, string $csrf): string
+    {
+        $prefix = $this->adminPrefix();
+        $coupon = $code !== '' ? $this->coupons()->get($code) : null;
+        $isNew = $coupon === null;
+        $c = htmlspecialchars($coupon['code'] ?? $code);
+        $type = htmlspecialchars($coupon['type'] ?? 'percent');
+        $amount = (int) ($coupon['amount'] ?? 10);
+        $amountDisplay = ($coupon['type'] ?? 'percent') === 'fixed'
+            ? number_format($amount / 100, 2, '.', '')
+            : (string) $amount;
+        $maxUses = $coupon['max_uses'] ?? '';
+        $maxUses = $maxUses === null ? '' : (string) $maxUses;
+        $expires = htmlspecialchars($coupon['expires'] ?? '');
+        $active = ($coupon['active'] ?? true) ? 'checked' : '';
+        $readonly = $isNew ? '' : 'readonly';
+        $heading = $isNew ? 'New coupon' : 'Edit coupon';
+
+        $delete = '';
+        if (!$isNew && $c !== '') {
+            $delete = <<<HTML
+<form method="POST" action="{$prefix}/commerce/coupons/delete" style="margin-top:1rem" onsubmit="return confirm('Delete coupon?')">
+  {$csrf}
+  <input type="hidden" name="code" value="{$c}">
+  <button type="submit" class="btn btn-danger">Delete coupon</button>
+</form>
+HTML;
+        }
+
+        return <<<HTML
+<h1>🛒 {$heading}</h1>
+<form method="POST" action="{$prefix}/commerce/coupons/save">
+  {$csrf}
+  <div class="panel">
+    <div class="form-group"><label>Code</label><input name="code" value="{$c}" required pattern="[A-Za-z0-9_-]+" {$readonly}></div>
+    <div class="form-group"><label>Type</label>
+      <select name="type">
+        <option value="percent" {$this->selected($type, 'percent')}>Percent off</option>
+        <option value="fixed" {$this->selected($type, 'fixed')}>Fixed amount (cents in DB; enter dollars below if fixed)</option>
+      </select>
+    </div>
+    <div class="form-group"><label>Amount (percent 1–100, or dollars if fixed)</label><input name="amount" value="{$amountDisplay}" required></div>
+    <div class="form-group"><label>Max uses (blank = unlimited)</label><input name="max_uses" value="{$maxUses}"></div>
+    <div class="form-group"><label>Expires (ISO date, optional)</label><input name="expires" value="{$expires}" placeholder="2026-12-31"></div>
+    <div class="form-group"><label><input type="checkbox" name="active" value="1" {$active}> Active</label></div>
+  </div>
+  <button type="submit" class="btn btn-primary">Save</button>
+  <a class="btn" href="{$prefix}/commerce/coupons">Back</a>
 </form>
 {$delete}
 HTML;
@@ -129,6 +226,18 @@ HTML;
         require_once $this->app->rootPath() . '/user/plugins/commerce/classes/ProductRegistry.php';
 
         return new ProductRegistry($this->app->rootPath() . '/user/plugins/commerce/data/products');
+    }
+
+    public function coupons(): CouponRegistry
+    {
+        require_once $this->app->rootPath() . '/user/plugins/commerce/classes/CouponRegistry.php';
+
+        return new CouponRegistry($this->app->rootPath() . '/user/plugins/commerce/data/coupons');
+    }
+
+    private function selected(string $current, string $value): string
+    {
+        return $current === $value ? 'selected' : '';
     }
 
     private function adminPrefix(): string

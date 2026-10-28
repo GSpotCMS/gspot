@@ -1,5 +1,5 @@
 name: commerce
-version: 0.2.0
+version: 0.3.0
 description: Flat-file products, session cart, Stripe Checkout. No database required.
 author: FutureVision Labs · Team DC
 enabled: true
@@ -10,6 +10,9 @@ events:
 config:
   products_path: data/products
   orders_path: data/orders
+  coupons_path: data/coupons
+  receipts_path: data/receipts
+  notify_email_env: COMMERCE_NOTIFY_EMAIL
   shop_path: /commerce/shop
   currency: aud
   stripe_secret_env: STRIPE_SECRET_KEY

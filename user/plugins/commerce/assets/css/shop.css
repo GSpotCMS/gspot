@@ -60,6 +60,11 @@
   border: 1px solid var(--border, hsl(270 15% 22%));
   border-radius: 0.5rem;
 }
+.commerce-coupon { margin: 1.25rem 0; padding: 1rem; border: 1px dashed var(--border, hsl(270 15% 28%)); border-radius: 0.5rem; }
+.commerce-coupon-form { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
+.commerce-total { font-size: 1.15rem; margin-top: 0.5rem; }
+.commerce-sold-out { color: hsl(0 70% 65%); font-weight: 600; }
+.commerce-stock { font-size: 0.85rem; opacity: 0.85; margin-top: 0.35rem; }
 .commerce-embed-card button {
   background: var(--accent, hsl(300 85% 55%));
   border: 0;

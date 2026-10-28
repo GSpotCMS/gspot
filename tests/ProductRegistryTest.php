@@ -48,6 +48,21 @@ final class ProductRegistryTest extends TestCase
         $this->assertNull($registry->get('test-mug'));
     }
 
+    public function testStockAdjust(): void
+    {
+        $registry = new ProductRegistry($this->dir);
+        $registry->save('limited', [
+            'title' => 'Limited',
+            'price_cents' => 100,
+            'stock' => 3,
+        ]);
+
+        $this->assertSame(3, $registry->availableStock('limited'));
+        $this->assertTrue($registry->adjustStock('limited', -2));
+        $this->assertSame(1, $registry->availableStock('limited'));
+        $this->assertFalse($registry->adjustStock('limited', -5));
+    }
+
     private function removeDir(string $dir): void
     {
         foreach (scandir($dir) ?: [] as $item) {

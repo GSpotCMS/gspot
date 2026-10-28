@@ -23,6 +23,8 @@
                 $slug = $product['slug'] ?? '';
                 $price = (int)($product['price_cents'] ?? 0);
                 $cur = $product['currency'] ?? 'aud';
+                $stock = array_key_exists('stock', $product) && $product['stock'] !== null ? (int)$product['stock'] : null;
+                $soldOut = $stock !== null && $stock <= 0;
             @endphp
             <article class="commerce-card">
                 @if(!empty($product['image']))
@@ -31,11 +33,18 @@
                 <h2><a href="/commerce/product/{{ $slug }}">{{ $product['title'] ?? $slug }}</a></h2>
                 <p>{{ $product['description'] ?? '' }}</p>
                 <p class="commerce-price">{{ strtoupper($cur) }} {{ number_format($price / 100, 2) }}</p>
-                <form method="POST" action="/commerce/cart/add">
-                    <input type="hidden" name="slug" value="{{ $slug }}">
-                    <input type="hidden" name="qty" value="1">
-                    <button type="submit">Add to cart</button>
-                </form>
+                @if($soldOut)
+                    <p class="commerce-sold-out">Out of stock</p>
+                @else
+                    <form method="POST" action="/commerce/cart/add">
+                        <input type="hidden" name="slug" value="{{ $slug }}">
+                        <input type="hidden" name="qty" value="1">
+                        <button type="submit">Add to cart</button>
+                    </form>
+                    @if($stock !== null)
+                        <p class="commerce-stock">{{ $stock }} in stock</p>
+                    @endif
+                @endif
             </article>
         @endforeach
     </div>

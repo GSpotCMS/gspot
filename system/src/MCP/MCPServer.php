@@ -655,6 +655,7 @@ class MCPServer
                     'price_cents' => ['type' => 'integer'],
                     'currency' => ['type' => 'string'],
                     'active' => ['type' => 'boolean'],
+                    'stock' => ['type' => 'integer', 'description' => 'Omit or null for unlimited'],
                 ],
                 'required' => ['slug', 'title', 'price_cents'],
             ],
@@ -668,13 +669,17 @@ class MCPServer
                 return 'Error: Invalid slug.';
             }
             try {
-                $registry->save($slug, [
+                $meta = [
                     'title' => $args['title'],
                     'description' => $args['description'] ?? '',
                     'price_cents' => (int) $args['price_cents'],
                     'currency' => $args['currency'] ?? 'aud',
                     'active' => $args['active'] ?? true,
-                ]);
+                ];
+                if (array_key_exists('stock', $args)) {
+                    $meta['stock'] = $args['stock'];
+                }
+                $registry->save($slug, $meta);
             } catch (\InvalidArgumentException $e) {
                 return 'Error: ' . $e->getMessage();
             }
@@ -700,6 +705,61 @@ class MCPServer
             $orders = (new \GSpot\UserPlugins\Commerce\OrderRegistry($dir))->all(max(1, min(100, $limit)));
 
             return json_encode($orders, JSON_PRETTY_PRINT);
+        });
+
+        $this->registerTool('gspot_list_coupons', [
+            'description' => 'List commerce coupons (requires commerce plugin)',
+            'inputSchema' => ['type' => 'object', 'properties' => []],
+        ], function (array $args): string {
+            $dir = $this->app->rootPath() . '/user/plugins/commerce/data/coupons';
+            if (!is_dir($dir)) {
+                return 'Error: commerce plugin not installed.';
+            }
+            require_once $this->app->rootPath() . '/user/plugins/commerce/classes/CouponRegistry.php';
+            $coupons = (new \GSpot\UserPlugins\Commerce\CouponRegistry($dir))->all();
+
+            return json_encode($coupons, JSON_PRETTY_PRINT);
+        });
+
+        $this->registerTool('gspot_save_coupon', [
+            'description' => 'Create or update a commerce coupon',
+            'inputSchema' => [
+                'type' => 'object',
+                'properties' => [
+                    'code' => ['type' => 'string'],
+                    'type' => ['type' => 'string', 'description' => 'percent or fixed'],
+                    'amount' => ['type' => 'integer', 'description' => 'Percent 1-100 or fixed cents'],
+                    'active' => ['type' => 'boolean'],
+                    'max_uses' => ['type' => 'integer'],
+                ],
+                'required' => ['code', 'type', 'amount'],
+            ],
+        ], function (array $args): string {
+            $dir = $this->app->rootPath() . '/user/plugins/commerce/data/coupons';
+            if (!is_dir($dir)) {
+                return 'Error: commerce plugin not installed.';
+            }
+            require_once $this->app->rootPath() . '/user/plugins/commerce/classes/CouponRegistry.php';
+            $registry = new \GSpot\UserPlugins\Commerce\CouponRegistry($dir);
+            $code = $registry->normalizeCode((string) ($args['code'] ?? ''));
+            if ($code === '') {
+                return 'Error: Invalid code.';
+            }
+            $existing = $registry->get($code);
+            try {
+                $registry->save($code, [
+                    'type' => $args['type'],
+                    'amount' => (int) $args['amount'],
+                    'active' => $args['active'] ?? true,
+                    'max_uses' => $args['max_uses'] ?? null,
+                    'uses' => (int) ($existing['uses'] ?? 0),
+                    'expires' => (string) ($args['expires'] ?? ''),
+                ]);
+            } catch (\InvalidArgumentException $e) {
+                return 'Error: ' . $e->getMessage();
+            }
+
+            return "Coupon '{$code}' saved.";
         });
 
         $this->registerTool('gspot_list_mud_patterns', [

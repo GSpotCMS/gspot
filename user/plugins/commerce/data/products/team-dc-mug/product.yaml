@@ -6,3 +6,4 @@ currency: aud
 image: ''
 active: true
 stripe_price_id: ''
+stock: 42

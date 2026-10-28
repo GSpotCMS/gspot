@@ -1,0 +1,7 @@
+code: TEAMDC10
+type: percent
+amount: 10
+active: true
+max_uses: null
+uses: 0
+expires: ''

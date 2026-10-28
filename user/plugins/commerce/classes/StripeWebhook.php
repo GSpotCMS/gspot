@@ -15,6 +15,9 @@ final class StripeWebhook
         private readonly string $secretKey,
         private readonly string $webhookSecret,
         private readonly OrderRegistry $orders,
+        private readonly ?ProductRegistry $products = null,
+        private readonly ?CouponRegistry $coupons = null,
+        private readonly ?OrderReceiptNotifier $notifier = null,
     ) {
         if ($this->secretKey !== '') {
             Stripe::setApiKey($this->secretKey);
@@ -55,14 +58,50 @@ final class StripeWebhook
             }
         }
 
-        $this->orders->save($id, [
+        $coupon = (string) ($session->metadata->gspot_coupon ?? '');
+        $cartJson = (string) ($session->metadata->gspot_cart ?? '');
+
+        $order = [
             'status' => 'paid',
             'email' => (string) ($session->customer_details->email ?? $session->customer_email ?? ''),
             'amount_total' => (int) ($session->amount_total ?? 0),
             'currency' => strtolower((string) ($session->currency ?? 'aud')),
             'payment_status' => (string) ($session->payment_status ?? ''),
             'line_items' => $lines,
+            'coupon' => $coupon,
+            'cart_snapshot' => $cartJson,
             'created' => date('c', (int) ($session->created ?? time())),
-        ]);
+        ];
+
+        $this->orders->save($id, $order);
+        $this->fulfillInventory($cartJson);
+        if ($coupon !== '' && $this->coupons !== null) {
+            $this->coupons->incrementUses($coupon);
+        }
+        $this->notifier?->notify($id, $order);
+    }
+
+    private function fulfillInventory(string $cartJson): void
+    {
+        if ($this->products === null || $cartJson === '') {
+            return;
+        }
+
+        $rows = json_decode($cartJson, true);
+        if (!is_array($rows)) {
+            return;
+        }
+
+        foreach ($rows as $row) {
+            if (!is_array($row)) {
+                continue;
+            }
+            $slug = (string) ($row['slug'] ?? '');
+            $qty = (int) ($row['qty'] ?? 0);
+            if ($slug === '' || $qty <= 0) {
+                continue;
+            }
+            $this->products->adjustStock($slug, -$qty);
+        }
     }
 }

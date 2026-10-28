@@ -140,6 +140,11 @@ class AdminRouter
             $this->route('POST', '/commerce/products/save', fn($r) => $this->commerceProductSave($r));
             $this->route('POST', '/commerce/products/delete', fn($r) => $this->commerceProductDelete($r));
             $this->route('GET', '/commerce/orders', fn($r) => $this->commerceOrdersList($r));
+            $this->route('GET', '/commerce/coupons', fn($r) => $this->commerceCouponsList($r));
+            $this->route('GET', '/commerce/coupons/new', fn($r) => $this->commerceCouponEdit($r));
+            $this->route('GET', '/commerce/coupons/edit', fn($r) => $this->commerceCouponEdit($r));
+            $this->route('POST', '/commerce/coupons/save', fn($r) => $this->commerceCouponSave($r));
+            $this->route('POST', '/commerce/coupons/delete', fn($r) => $this->commerceCouponDelete($r));
         }
     }
 
@@ -839,6 +844,7 @@ HTML;
             'currency' => $request->request->get('currency', 'aud'),
             'image' => $request->request->get('image', ''),
             'stripe_price_id' => $request->request->get('stripe_price_id', ''),
+            'stock' => $this->commerceStockInput($request),
             'active' => $request->request->has('active'),
         ]);
 
@@ -860,6 +866,78 @@ HTML;
         return new Response($this->render('commerce-admin', [
             'body' => $this->commerceAdmin()->ordersListContent(),
         ]));
+    }
+
+    private function commerceCouponsList(Request $request): Response
+    {
+        return new Response($this->render('commerce-admin', [
+            'body' => $this->commerceAdmin()->couponsListContent(),
+        ]));
+    }
+
+    private function commerceCouponEdit(Request $request): Response
+    {
+        $code = (string) $request->query->get('code', '');
+
+        return new Response($this->render('commerce-admin', [
+            'body' => $this->commerceAdmin()->couponEditContent($code, Csrf::field()),
+        ]));
+    }
+
+    private function commerceCouponSave(Request $request): Response
+    {
+        require_once $this->app->rootPath() . '/user/plugins/commerce/classes/CouponRegistry.php';
+        $registry = new \GSpot\UserPlugins\Commerce\CouponRegistry(
+            $this->app->rootPath() . '/user/plugins/commerce/data/coupons',
+        );
+        $code = $registry->normalizeCode((string) $request->request->get('code', ''));
+        if ($code === '') {
+            return new Response('Invalid code', 400);
+        }
+
+        $type = strtolower((string) $request->request->get('type', 'percent'));
+        $amountRaw = (string) $request->request->get('amount', '0');
+        $amount = $type === 'fixed'
+            ? (int) round((float) $amountRaw * 100)
+            : (int) $amountRaw;
+
+        $maxUses = trim((string) $request->request->get('max_uses', ''));
+        $existing = $registry->get($code);
+
+        $registry->save($code, [
+            'type' => $type,
+            'amount' => $amount,
+            'max_uses' => $maxUses === '' ? null : (int) $maxUses,
+            'uses' => (int) ($existing['uses'] ?? 0),
+            'expires' => (string) $request->request->get('expires', ''),
+            'active' => $request->request->has('active'),
+        ]);
+
+        return new RedirectResponse($this->prefix . '/commerce/coupons');
+    }
+
+    private function commerceCouponDelete(Request $request): Response
+    {
+        require_once $this->app->rootPath() . '/user/plugins/commerce/classes/CouponRegistry.php';
+        $registry = new \GSpot\UserPlugins\Commerce\CouponRegistry(
+            $this->app->rootPath() . '/user/plugins/commerce/data/coupons',
+        );
+        $code = $registry->normalizeCode((string) $request->request->get('code', ''));
+        if ($code !== '') {
+            $registry->delete($code);
+        }
+
+        return new RedirectResponse($this->prefix . '/commerce/coupons');
+    }
+
+    private function commerceStockInput(Request $request): ?int
+    {
+        $raw = trim((string) $request->request->get('stock', ''));
+        if ($raw === '') {
+            return null;
+        }
+
+        return max(0, (int) $raw);
     }
 
     private function mudPatternRegistry(): ?\GSpot\UserPlugins\GspotMud\MudPatternRegistry

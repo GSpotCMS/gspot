@@ -10,8 +10,12 @@ use GSpot\Security\SessionGuard;
 final class Cart
 {
     private const SESSION_KEY = 'gspot_commerce_cart';
+    private const COUPON_KEY = 'gspot_commerce_coupon';
 
-    public function __construct(private readonly ProductRegistry $products) {}
+    public function __construct(
+        private readonly ProductRegistry $products,
+        private readonly ?CouponRegistry $coupons = null,
+    ) {}
 
     /** @return array<string, int> slug => qty */
     public function items(): array
@@ -32,7 +36,15 @@ final class Cart
 
         SessionGuard::start();
         $items = $this->items();
-        $items[$slug] = min(99, ($items[$slug] ?? 0) + max(1, $qty));
+        $nextQty = ($items[$slug] ?? 0) + max(1, $qty);
+        $available = $this->products->availableStock($slug);
+        if ($available !== null) {
+            $nextQty = min($nextQty, $available);
+            if ($nextQty <= 0) {
+                return;
+            }
+        }
+        $items[$slug] = min(99, $nextQty);
         $_SESSION[self::SESSION_KEY] = $items;
     }
 
@@ -43,9 +55,78 @@ final class Cart
         if ($qty <= 0) {
             unset($items[$slug]);
         } else {
+            $available = $this->products->availableStock($slug);
+            if ($available !== null) {
+                $qty = min($qty, $available);
+            }
             $items[$slug] = min(99, $qty);
         }
         $_SESSION[self::SESSION_KEY] = $items;
+    }
+
+    public function applyCoupon(string $code): ?string
+    {
+        if ($this->coupons === null) {
+            return 'Coupons are not available';
+        }
+
+        $coupon = $this->coupons->resolveForCheckout($code);
+        if ($coupon === null) {
+            return 'Invalid or expired coupon code';
+        }
+
+        SessionGuard::start();
+        $_SESSION[self::COUPON_KEY] = (string) ($coupon['code'] ?? '');
+
+        return null;
+    }
+
+    public function removeCoupon(): void
+    {
+        SessionGuard::start();
+        unset($_SESSION[self::COUPON_KEY]);
+    }
+
+    /** @return array<string, mixed>|null */
+    public function appliedCoupon(): ?array
+    {
+        SessionGuard::start();
+        $code = (string) ($_SESSION[self::COUPON_KEY] ?? '');
+        if ($code === '' || $this->coupons === null) {
+            return null;
+        }
+
+        return $this->coupons->resolveForCheckout($code);
+    }
+
+    public function discountCents(): int
+    {
+        $coupon = $this->appliedCoupon();
+        if ($coupon === null) {
+            return 0;
+        }
+
+        return (new DiscountCalculator())->discountCents($this->subtotalCents(), $coupon);
+    }
+
+    public function totalCents(): int
+    {
+        return max(0, $this->subtotalCents() - $this->discountCents());
+    }
+
+    /** @return list<array{slug: string, qty: int}> */
+    public function snapshotForOrder(): array
+    {
+        $out = [];
+        foreach ($this->lines() as $line) {
+            $slug = (string) ($line['product']['slug'] ?? '');
+            if ($slug === '') {
+                continue;
+            }
+            $out[] = ['slug' => $slug, 'qty' => (int) $line['qty']];
+        }
+
+        return $out;
     }
 
     public function clear(): void
