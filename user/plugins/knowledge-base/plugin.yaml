@@ -1,0 +1,8 @@
+name: knowledge-base
+version: 1.0.0
+description: Structured knowledge base with sections, floating TOC, and article ratings
+author: FutureVision Labs
+enabled: true
+events:
+  - onPageRender
+  - onPageRoute

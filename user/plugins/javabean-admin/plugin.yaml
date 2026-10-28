@@ -1,0 +1,19 @@
+name: javabean-admin
+version: 1.0.0
+description: 'Admin panel theme presets — twelve cockpits, light/dark pairs, density control, font picker.'
+author: 'FutureVision Labs · Team DC'
+enabled: true
+priority: 100
+events:
+    - onAppBoot
+config:
+    active_preset: team-dc-synthwave
+    density: comfy
+    custom_css: ''
+    styling:
+        accentHue: null
+        accentSaturation: null
+        usePresetAccent: true
+        usePresetFont: true
+        fontFamily: null
+        radius: default

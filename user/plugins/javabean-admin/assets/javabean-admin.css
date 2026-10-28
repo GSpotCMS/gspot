@@ -1,0 +1,7 @@
+/* JavaBean Admin — GSpot CMS */
+html.javabean-active {
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+html.javabean-active body {
+  font-family: var(--font-body, 'Inter', -apple-system, sans-serif);
+}

@@ -1,0 +1,34 @@
+name: starter
+version: 1.0.0
+description: GSpot CMS default starter theme
+author: FutureVision Labs
+
+presets:
+  default:
+    primary: "#6b21a8"
+    secondary: "#f43f5e"
+    accent: "#06b6d4"
+    background: "#0d0221"
+    surface: "#1a0533"
+    text: "#f8fafc"
+    muted: "#94a3b8"
+
+vibes:
+  synthwave:
+    extends: default
+  minimal:
+    primary: "#1e293b"
+    secondary: "#3b82f6"
+    background: "#ffffff"
+    surface: "#f8fafc"
+    text: "#1e293b"
+    muted: "#64748b"
+  cyber_noir:
+    primary: "#00ff41"
+    secondary: "#ff00ff"
+    accent: "#00ffff"
+    background: "#050505"
+    surface: "#121212"
+    text: "#e0e0e0"
+    muted: "#4a4a4a"
+

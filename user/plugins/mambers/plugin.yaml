@@ -1,0 +1,8 @@
+name: mambers
+version: 1.0.0
+description: Social profiles, follow/block graph, and activity feed
+author: FutureVision Labs
+enabled: true
+events:
+  - onPageRender
+  - onPageRoute

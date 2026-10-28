@@ -1,0 +1,24 @@
+#!/usr/bin/env php
+<?php
+
+declare(strict_types=1);
+
+/**
+ * GSpot CMS — MCP Server Entry Point
+ * 
+ * Run via: php bin/gspot-mcp
+ * Or configure in cursor MCP settings as stdio transport.
+ */
+
+define('GSPOT_ROOT', dirname(__DIR__));
+
+require GSPOT_ROOT . '/vendor/autoload.php';
+
+use GSpot\Application;
+use GSpot\MCP\MCPServer;
+
+$app = Application::getInstance();
+$app->boot();
+
+$server = new MCPServer($app);
+$server->run();

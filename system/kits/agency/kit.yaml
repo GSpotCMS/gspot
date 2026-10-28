@@ -1,0 +1,9 @@
+title: Agency
+description: Professional agency site with services, portfolio, and contact pages
+theme: starter
+version: 1.0.0
+pages:
+  - home
+  - services
+  - portfolio
+  - contact

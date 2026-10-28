@@ -1,0 +1,14 @@
+theme: starter
+timezone: UTC
+cache:
+  enabled: false
+  ttl: 3600
+admin:
+  prefix: gspot-admin
+  enabled: true
+  login:
+    max_attempts: 5
+    lockout_seconds: 900
+mcp:
+  enabled: true
+  transport: stdio

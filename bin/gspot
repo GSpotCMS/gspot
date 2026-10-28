@@ -1,0 +1,85 @@
+#!/usr/bin/env php
+<?php
+
+declare(strict_types=1);
+
+define('GSPOT_START', microtime(true));
+define('GSPOT_ROOT', dirname(__DIR__));
+
+require GSPOT_ROOT . '/vendor/autoload.php';
+
+use GSpot\Application;
+
+$app = Application::getInstance();
+$app->boot();
+
+$command = $argv[1] ?? 'help';
+$args = array_slice($argv, 2);
+
+switch ($command) {
+    case 'serve':
+        $host = $args[0] ?? 'localhost';
+        $port = $args[1] ?? '8080';
+        echo "GSpot CMS dev server starting on http://{$host}:{$port}\n";
+        echo "Press Ctrl+C to stop.\n\n";
+        passthru("php -S {$host}:{$port} -t " . GSPOT_ROOT . '/public ' . GSPOT_ROOT . '/system/server.php');
+        break;
+
+    case 'cache:clear':
+        $app->cache()->clear();
+        echo "Cache cleared.\n";
+        break;
+
+    case 'new:plugin':
+        $name = $args[0] ?? null;
+        if (!$name) {
+            echo "Usage: gspot new:plugin <name>\n";
+            exit(1);
+        }
+        $app->scaffoldPlugin($name);
+        echo "Plugin '{$name}' scaffolded in user/plugins/{$name}/\n";
+        break;
+
+    case 'new:theme':
+        $name = $args[0] ?? null;
+        if (!$name) {
+            echo "Usage: gspot new:theme <name>\n";
+            exit(1);
+        }
+        $app->scaffoldTheme($name);
+        echo "Theme '{$name}' scaffolded in user/themes/{$name}/\n";
+        break;
+
+    case 'kit:install':
+        $kit = $args[0] ?? null;
+        if (!$kit) {
+            echo "Usage: gspot kit:install <kit-name>\n";
+            exit(1);
+        }
+        $app->installKit($kit);
+        echo "Starter kit '{$kit}' installed.\n";
+        break;
+
+    case 'version':
+        echo "GSpot CMS v" . Application::VERSION . "\n";
+        break;
+
+    case 'help':
+    default:
+        echo <<<HELP
+        GSpot CMS — Find the Spot. Hit it. Ship it.
+        
+        Usage: gspot <command> [arguments]
+        
+        Commands:
+          serve [host] [port]    Start development server (default: localhost:8080)
+          cache:clear            Clear compiled views and page cache
+          new:plugin <name>      Scaffold a new plugin
+          new:theme <name>       Scaffold a new theme
+          kit:install <name>     Install a starter kit
+          version                Show GSpot CMS version
+          help                   Show this help message
+        
+        HELP;
+        break;
+}

@@ -1,0 +1,8 @@
+name: forumz
+version: 1.0.0
+description: Flat-file threaded discussion forums
+author: FutureVision Labs
+enabled: true
+events:
+  - onPageRender
+  - onPageRoute

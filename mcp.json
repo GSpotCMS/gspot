@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "gspot": {
+      "command": "php",
+      "args": ["bin/gspot-mcp"],
+      "cwd": "."
+    }
+  }
+}

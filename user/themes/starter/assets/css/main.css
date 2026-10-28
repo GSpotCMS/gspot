@@ -1,0 +1,211 @@
+:root {
+    --primary: #6b21a8;
+    --secondary: #f43f5e;
+    --accent: #06b6d4;
+    --bg: #0d0221;
+    --surface: #1a0533;
+    --text: #f8fafc;
+    --muted: #94a3b8;
+    --font-body: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    --font-display: 'Orbitron', monospace;
+}
+
+*, *::before, *::after {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html {
+    font-size: 16px;
+    scroll-behavior: smooth;
+}
+
+body {
+    font-family: var(--font-body);
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.7;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+a {
+    color: var(--accent);
+    text-decoration: none;
+    transition: color 0.2s ease;
+}
+
+a:hover {
+    color: var(--secondary);
+}
+
+.site-header {
+    padding: 1.5rem 2rem;
+    border-bottom: 1px solid rgba(168, 85, 247, 0.2);
+}
+
+.site-brand {
+    font-family: var(--font-display);
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--text);
+    letter-spacing: 0.05em;
+}
+
+.site-content {
+    flex: 1;
+    max-width: 780px;
+    margin: 0 auto;
+    padding: 3rem 2rem;
+    width: 100%;
+}
+
+.page h1 {
+    font-size: 2.5rem;
+    font-weight: 800;
+    margin-bottom: 1.5rem;
+    background: linear-gradient(135deg, var(--secondary), var(--primary));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.page h2 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-top: 2.5rem;
+    margin-bottom: 1rem;
+    color: var(--accent);
+}
+
+.page p {
+    margin-bottom: 1rem;
+    color: var(--muted);
+}
+
+.page strong {
+    color: var(--text);
+}
+
+.page em {
+    color: var(--secondary);
+    font-style: italic;
+}
+
+.page ul, .page ol {
+    margin-bottom: 1rem;
+    padding-left: 1.5rem;
+}
+
+.page li {
+    margin-bottom: 0.5rem;
+    color: var(--muted);
+}
+
+.page code {
+    background: rgba(168, 85, 247, 0.1);
+    border: 1px solid rgba(168, 85, 247, 0.2);
+    border-radius: 4px;
+    padding: 0.15rem 0.4rem;
+    font-size: 0.875rem;
+    color: var(--accent);
+}
+
+.site-footer {
+    padding: 2rem;
+    text-align: center;
+    border-top: 1px solid rgba(168, 85, 247, 0.2);
+    color: var(--muted);
+    font-size: 0.875rem;
+}
+
+.error-page {
+    text-align: center;
+    padding: 4rem 2rem;
+}
+
+.error-page h1 {
+    font-size: 6rem;
+    background: linear-gradient(135deg, var(--secondary), var(--primary));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+/* MUD fence bridge — map theme.yaml :root tokens → gspot-mud-fences.css vars */
+.mud-page.mud-page--gspot {
+    --bg: var(--bg);
+    --bg-card: var(--surface);
+    --text: var(--text);
+    --muted: var(--muted);
+    --accent: var(--accent);
+    --accent-glow: color-mix(in srgb, var(--accent) 70%, var(--secondary));
+    --gold: var(--secondary);
+    --teal: var(--accent);
+    --grav-navy: color-mix(in srgb, var(--surface) 80%, var(--bg));
+    --border: color-mix(in srgb, var(--primary) 22%, var(--surface));
+    --radius: 0.65rem;
+    --shadow: 0 8px 32px color-mix(in srgb, var(--primary) 18%, transparent);
+    --font-sans: var(--font-body);
+    --font-display: var(--font-display);
+    --max: 68rem;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-body);
+    line-height: 1.65;
+}
+
+.mud-page--gspot .mud-content > h1 {
+    font-family: var(--font-display);
+    font-size: clamp(1.75rem, 4vw, 2.25rem);
+    margin-bottom: 1.5rem;
+    background: linear-gradient(135deg, var(--secondary), var(--primary));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.mud-page--gspot .mud-content > h1 + .mud-pattern,
+.mud-page--gspot .mud-content > h1 + p {
+    margin-top: 0;
+}
+
+.site-content:has(.mud-page--gspot) {
+    max-width: var(--max, 68rem);
+    padding-top: 1.5rem;
+}
+
+.mud-page--gspot .btn.primary {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--bg);
+}
+
+.mud-page--gspot .btn.primary:hover {
+    background: color-mix(in srgb, var(--accent) 78%, var(--text));
+    border-color: color-mix(in srgb, var(--accent) 78%, var(--text));
+}
+
+.mud-page--gspot .hero-mark {
+    background: linear-gradient(145deg, var(--accent), var(--primary));
+}
+
+.mud-page--gspot .compare-head {
+    background: color-mix(in srgb, var(--surface) 65%, var(--primary));
+    color: var(--text);
+}
+
+.mud-page--gspot .manifesto {
+    background: linear-gradient(135deg, color-mix(in srgb, var(--surface) 90%, var(--primary)), var(--bg));
+    color: var(--text);
+}
+
+.mud-page--gspot .manifesto p {
+    color: var(--muted);
+}
+
+.mud-page--gspot .manifesto .sign-off {
+    color: var(--accent);
+}

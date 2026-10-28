@@ -1,0 +1,328 @@
+{
+  "presets": [
+    {
+      "slug": "javabean-classic",
+      "name": "JavaBean Classic",
+      "tagline": "2004 coffee energy",
+      "fontFamily": "jost",
+      "accentDefault": { "hue": 25, "saturation": 95 },
+      "tokens": {
+        "light": {
+          "background": "hsl(35 33% 97%)",
+          "foreground": "hsl(25 30% 18%)",
+          "primary": "hsl(25 95% 42%)",
+          "sidebar": "hsl(30 28% 94%)",
+          "border": "hsl(30 18% 85%)",
+          "muted": "hsl(32 20% 92%)",
+          "mutedForeground": "hsl(25 12% 42%)"
+        },
+        "dark": {
+          "background": "hsl(25 18% 9%)",
+          "foreground": "hsl(35 25% 92%)",
+          "primary": "hsl(28 90% 55%)",
+          "sidebar": "hsl(25 16% 12%)",
+          "border": "hsl(25 12% 22%)",
+          "muted": "hsl(25 14% 16%)",
+          "mutedForeground": "hsl(30 10% 62%)"
+        }
+      }
+    },
+    {
+      "slug": "backenders-amber",
+      "name": "Backenders Amber",
+      "tagline": "Mambo-era admin gold",
+      "fontFamily": "outfit",
+      "accentDefault": { "hue": 38, "saturation": 92 },
+      "tokens": {
+        "light": {
+          "background": "hsl(42 40% 97%)",
+          "foreground": "hsl(30 35% 16%)",
+          "primary": "hsl(38 92% 45%)",
+          "sidebar": "hsl(40 35% 93%)",
+          "border": "hsl(38 22% 82%)",
+          "muted": "hsl(42 28% 90%)",
+          "mutedForeground": "hsl(30 15% 40%)"
+        },
+        "dark": {
+          "background": "hsl(28 20% 8%)",
+          "foreground": "hsl(42 30% 92%)",
+          "primary": "hsl(38 88% 58%)",
+          "sidebar": "hsl(30 18% 11%)",
+          "border": "hsl(30 14% 20%)",
+          "muted": "hsl(28 16% 14%)",
+          "mutedForeground": "hsl(38 12% 60%)"
+        }
+      }
+    },
+    {
+      "slug": "wwweed-emerald",
+      "name": "WWWeed Emerald",
+      "tagline": "Gemzy banner green",
+      "fontFamily": "raleway",
+      "accentDefault": { "hue": 160, "saturation": 84 },
+      "tokens": {
+        "light": {
+          "background": "hsl(150 25% 97%)",
+          "foreground": "hsl(160 30% 14%)",
+          "primary": "hsl(160 84% 32%)",
+          "sidebar": "hsl(155 22% 93%)",
+          "border": "hsl(155 18% 82%)",
+          "muted": "hsl(150 20% 91%)",
+          "mutedForeground": "hsl(160 12% 38%)"
+        },
+        "dark": {
+          "background": "hsl(160 18% 7%)",
+          "foreground": "hsl(150 25% 92%)",
+          "primary": "hsl(158 75% 48%)",
+          "sidebar": "hsl(162 16% 10%)",
+          "border": "hsl(160 12% 18%)",
+          "muted": "hsl(160 14% 13%)",
+          "mutedForeground": "hsl(155 10% 58%)"
+        }
+      }
+    },
+    {
+      "slug": "team-dc-synthwave",
+      "name": "Team DC Synthwave",
+      "tagline": "FutureVision neon",
+      "fontFamily": "space-grotesk",
+      "accentDefault": { "hue": 300, "saturation": 85 },
+      "tokens": {
+        "light": {
+          "background": "hsl(280 30% 98%)",
+          "foreground": "hsl(280 40% 16%)",
+          "primary": "hsl(300 85% 48%)",
+          "sidebar": "hsl(285 25% 94%)",
+          "border": "hsl(285 20% 84%)",
+          "muted": "hsl(280 22% 92%)",
+          "mutedForeground": "hsl(285 15% 42%)"
+        },
+        "dark": {
+          "background": "hsl(270 22% 7%)",
+          "foreground": "hsl(300 30% 94%)",
+          "primary": "hsl(305 90% 62%)",
+          "sidebar": "hsl(272 18% 10%)",
+          "border": "hsl(275 14% 20%)",
+          "muted": "hsl(270 16% 13%)",
+          "mutedForeground": "hsl(290 12% 62%)"
+        }
+      }
+    },
+    {
+      "slug": "gspot-rally",
+      "name": "GSpot Rally",
+      "tagline": "Campaign red energy",
+      "fontFamily": "google-sans",
+      "accentDefault": { "hue": 347, "saturation": 77 },
+      "tokens": {
+        "light": {
+          "background": "hsl(0 20% 98%)",
+          "foreground": "hsl(350 35% 16%)",
+          "primary": "hsl(347 77% 48%)",
+          "sidebar": "hsl(355 18% 94%)",
+          "border": "hsl(350 16% 84%)",
+          "muted": "hsl(0 15% 92%)",
+          "mutedForeground": "hsl(350 12% 40%)"
+        },
+        "dark": {
+          "background": "hsl(350 18% 7%)",
+          "foreground": "hsl(355 25% 93%)",
+          "primary": "hsl(347 82% 58%)",
+          "sidebar": "hsl(352 16% 10%)",
+          "border": "hsl(350 12% 19%)",
+          "muted": "hsl(350 14% 13%)",
+          "mutedForeground": "hsl(355 10% 60%)"
+        }
+      }
+    },
+    {
+      "slug": "violet-cathedral",
+      "name": "Violet Cathedral",
+      "tagline": "Deep purple elegance",
+      "fontFamily": "lora",
+      "accentDefault": { "hue": 271, "saturation": 91 },
+      "tokens": {
+        "light": {
+          "background": "hsl(0 0% 100%)",
+          "foreground": "hsl(240 10% 4%)",
+          "primary": "hsl(271 91% 55%)",
+          "sidebar": "hsl(240 5% 96%)",
+          "border": "hsl(240 6% 90%)",
+          "muted": "hsl(240 5% 96%)",
+          "mutedForeground": "hsl(240 4% 46%)"
+        },
+        "dark": {
+          "background": "hsl(240 10% 4%)",
+          "foreground": "hsl(0 0% 98%)",
+          "primary": "hsl(271 91% 65%)",
+          "sidebar": "hsl(240 6% 10%)",
+          "border": "hsl(240 4% 16%)",
+          "muted": "hsl(240 4% 16%)",
+          "mutedForeground": "hsl(240 5% 65%)"
+        }
+      }
+    },
+    {
+      "slug": "midnight-ops",
+      "name": "Midnight Ops",
+      "tagline": "Editor at 2am",
+      "fontFamily": "jetbrains-mono",
+      "accentDefault": { "hue": 192, "saturation": 91 },
+      "tokens": {
+        "light": {
+          "background": "hsl(210 20% 98%)",
+          "foreground": "hsl(220 25% 12%)",
+          "primary": "hsl(192 91% 38%)",
+          "sidebar": "hsl(215 18% 94%)",
+          "border": "hsl(215 14% 84%)",
+          "muted": "hsl(210 16% 92%)",
+          "mutedForeground": "hsl(220 10% 40%)"
+        },
+        "dark": {
+          "background": "hsl(222 22% 6%)",
+          "foreground": "hsl(210 20% 92%)",
+          "primary": "hsl(192 85% 52%)",
+          "sidebar": "hsl(220 18% 9%)",
+          "border": "hsl(220 12% 16%)",
+          "muted": "hsl(222 14% 12%)",
+          "mutedForeground": "hsl(215 10% 58%)"
+        }
+      }
+    },
+    {
+      "slug": "mambo-desktop",
+      "name": "Mambo Desktop",
+      "tagline": "CRT nostalgia",
+      "fontFamily": "bitter",
+      "accentDefault": { "hue": 172, "saturation": 66 },
+      "tokens": {
+        "light": {
+          "background": "hsl(180 8% 95%)",
+          "foreground": "hsl(200 20% 14%)",
+          "primary": "hsl(172 66% 36%)",
+          "sidebar": "hsl(185 10% 90%)",
+          "border": "hsl(190 8% 78%)",
+          "muted": "hsl(180 8% 88%)",
+          "mutedForeground": "hsl(195 10% 38%)"
+        },
+        "dark": {
+          "background": "hsl(195 15% 8%)",
+          "foreground": "hsl(165 20% 88%)",
+          "primary": "hsl(172 70% 48%)",
+          "sidebar": "hsl(190 14% 11%)",
+          "border": "hsl(185 10% 18%)",
+          "muted": "hsl(192 12% 14%)",
+          "mutedForeground": "hsl(170 12% 55%)"
+        }
+      }
+    },
+    {
+      "slug": "mud-bazaar",
+      "name": "Mud Bazaar",
+      "tagline": "Marketplace warm neutrals",
+      "fontFamily": "merriweather",
+      "accentDefault": { "hue": 25, "saturation": 80 },
+      "tokens": {
+        "light": {
+          "background": "hsl(35 18% 97%)",
+          "foreground": "hsl(25 20% 18%)",
+          "primary": "hsl(25 80% 44%)",
+          "sidebar": "hsl(32 14% 93%)",
+          "border": "hsl(30 12% 84%)",
+          "muted": "hsl(35 12% 91%)",
+          "mutedForeground": "hsl(25 10% 42%)"
+        },
+        "dark": {
+          "background": "hsl(25 12% 9%)",
+          "foreground": "hsl(35 18% 91%)",
+          "primary": "hsl(28 75% 55%)",
+          "sidebar": "hsl(28 10% 12%)",
+          "border": "hsl(30 8% 20%)",
+          "muted": "hsl(28 10% 15%)",
+          "mutedForeground": "hsl(32 8% 58%)"
+        }
+      }
+    },
+    {
+      "slug": "evvytink-terminal",
+      "name": "EvvyTink Terminal",
+      "tagline": "Green phosphor weird",
+      "fontFamily": "fira-code",
+      "accentDefault": { "hue": 142, "saturation": 70 },
+      "tokens": {
+        "light": {
+          "background": "hsl(140 20% 96%)",
+          "foreground": "hsl(145 40% 12%)",
+          "primary": "hsl(142 70% 32%)",
+          "sidebar": "hsl(138 18% 92%)",
+          "border": "hsl(140 14% 80%)",
+          "muted": "hsl(140 16% 90%)",
+          "mutedForeground": "hsl(145 20% 36%)"
+        },
+        "dark": {
+          "background": "hsl(145 25% 4%)",
+          "foreground": "hsl(130 80% 78%)",
+          "primary": "hsl(130 85% 45%)",
+          "sidebar": "hsl(142 20% 6%)",
+          "border": "hsl(140 15% 14%)",
+          "muted": "hsl(145 18% 8%)",
+          "mutedForeground": "hsl(130 40% 55%)"
+        }
+      }
+    },
+    {
+      "slug": "nordic-frost",
+      "name": "Nordic Frost",
+      "tagline": "Scandinavian calm",
+      "fontFamily": "sora",
+      "accentDefault": { "hue": 221, "saturation": 83 },
+      "tokens": {
+        "light": {
+          "background": "hsl(210 25% 98%)",
+          "foreground": "hsl(215 25% 15%)",
+          "primary": "hsl(221 83% 48%)",
+          "sidebar": "hsl(212 20% 95%)",
+          "border": "hsl(214 18% 86%)",
+          "muted": "hsl(210 18% 93%)",
+          "mutedForeground": "hsl(215 12% 42%)"
+        },
+        "dark": {
+          "background": "hsl(220 20% 8%)",
+          "foreground": "hsl(210 20% 94%)",
+          "primary": "hsl(221 78% 62%)",
+          "sidebar": "hsl(218 18% 11%)",
+          "border": "hsl(220 14% 18%)",
+          "muted": "hsl(220 16% 13%)",
+          "mutedForeground": "hsl(215 10% 60%)"
+        }
+      }
+    },
+    {
+      "slug": "high-contrast",
+      "name": "High Contrast",
+      "tagline": "WCAG boss mode",
+      "fontFamily": "inter",
+      "accentDefault": { "hue": 221, "saturation": 100 },
+      "tokens": {
+        "light": {
+          "background": "hsl(0 0% 100%)",
+          "foreground": "hsl(0 0% 0%)",
+          "primary": "hsl(221 100% 38%)",
+          "sidebar": "hsl(0 0% 96%)",
+          "border": "hsl(0 0% 20%)",
+          "muted": "hsl(0 0% 94%)",
+          "mutedForeground": "hsl(0 0% 25%)"
+        },
+        "dark": {
+          "background": "hsl(0 0% 0%)",
+          "foreground": "hsl(0 0% 100%)",
+          "primary": "hsl(221 100% 65%)",
+          "sidebar": "hsl(0 0% 6%)",
+          "border": "hsl(0 0% 78%)",
+          "muted": "hsl(0 0% 10%)",
+          "mutedForeground": "hsl(0 0% 82%)"
+        }
+      }
+    }
+  ]
+}

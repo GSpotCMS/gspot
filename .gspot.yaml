@@ -1,0 +1,21 @@
+# GSpot CMS Site Configuration
+# This file lives at the project root and controls site-wide behaviour
+
+site:
+  title: GSpot CMS
+  description: Find the Spot. Hit it. Ship it.
+  url: https://gspotcms.com
+  author: FutureVision Labs / Team DC
+
+system:
+  theme: starter
+  timezone: UTC
+  cache:
+    enabled: true
+    ttl: 3600
+  admin:
+    prefix: gspot-admin
+    enabled: true
+  mcp:
+    enabled: true
+    transport: stdio
