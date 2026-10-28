@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.1.3 — 2026-10-28
+
+- **Editorial theme:** full magazine front page (masthead, hero + rail, card grid); article pages use two-column layout.
+- **Cache:** page cache keys include theme CSS/layout mtimes; clearing cache on theme activate in admin.
+
 ## 1.1.2 — 2026-10-28
 
 - **Dev server:** load Composer before theme asset routes; serve CSS/JS via `ConfigManager` (fixes unstyled sites on non-starter themes).

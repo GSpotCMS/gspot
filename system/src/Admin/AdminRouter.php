@@ -441,6 +441,7 @@ class AdminRouter
         $systemConfig = $this->app->config()->get('system', []);
         $systemConfig['theme'] = $name;
         $this->app->config()->save('system', $systemConfig);
+        $this->app->cache()->clear();
         return new RedirectResponse($this->prefix . '/themes');
     }
 

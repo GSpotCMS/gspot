@@ -9,8 +9,10 @@
     --font-body: 'Georgia', 'Times New Roman', serif;
     --font-display: 'Georgia', 'Times New Roman', serif;
     --font-sans: 'Segoe UI', system-ui, sans-serif;
-    --max: 42rem;
+    --max: 72rem;
+    --magazine-col: minmax(0, 1fr);
     --rule: 1px solid color-mix(in srgb, var(--text) 12%, transparent);
+    --rule-heavy: 2px solid var(--primary);
 }
 
 *, *::before, *::after {
@@ -44,44 +46,351 @@ a:hover {
     color: var(--secondary);
 }
 
-.site-header {
-    border-bottom: var(--rule);
-    padding: 1.25rem 1.5rem;
-}
-
-.site-header-inner {
-    max-width: 72rem;
-    margin: 0 auto;
+/* —— Magazine masthead —— */
+.magazine-topbar {
     display: flex;
-    align-items: baseline;
     justify-content: space-between;
+    align-items: center;
     gap: 1rem;
-}
-
-.site-brand {
+    max-width: var(--max);
+    margin: 0 auto;
+    padding: 0.5rem 1.5rem;
     font-family: var(--font-sans);
-    font-size: 0.75rem;
-    font-weight: 700;
-    letter-spacing: 0.2em;
-    text-transform: uppercase;
-    color: var(--text);
-    text-decoration: none;
-}
-
-.site-tagline {
-    font-family: var(--font-sans);
-    font-size: 0.7rem;
-    letter-spacing: 0.12em;
+    font-size: 0.65rem;
+    letter-spacing: 0.06em;
     text-transform: uppercase;
     color: var(--muted);
+    border-bottom: var(--rule);
+    background: var(--surface);
+}
+
+.magazine-masthead {
+    text-align: center;
+    padding: 1.75rem 1.5rem 1rem;
+    border-bottom: var(--rule-heavy);
+    background: var(--surface);
+}
+
+.magazine-logo {
+    display: block;
+    font-family: var(--font-display);
+    font-size: clamp(2.25rem, 6vw, 3.5rem);
+    font-weight: 400;
+    font-style: italic;
+    letter-spacing: -0.02em;
+    color: var(--text);
+    text-decoration: none;
+    line-height: 1.05;
+}
+
+.magazine-deck {
+    margin-top: 0.5rem;
+    font-family: var(--font-sans);
+    font-size: 0.75rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--secondary);
+}
+
+.magazine-nav {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.25rem 1.25rem;
+    padding: 0.65rem 1.5rem;
+    border-bottom: 3px double color-mix(in srgb, var(--text) 22%, transparent);
+    background: var(--bg);
+    font-family: var(--font-sans);
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+}
+
+.magazine-nav a {
+    color: var(--text);
+    text-decoration: none;
+    padding: 0.35rem 0;
+    border-bottom: 2px solid transparent;
+}
+
+.magazine-nav a:hover {
+    color: var(--secondary);
+    border-bottom-color: var(--secondary);
 }
 
 .site-content {
     flex: 1;
     max-width: var(--max);
     margin: 0 auto;
-    padding: 2.5rem 1.5rem 4rem;
+    padding: 0 1.5rem 3rem;
     width: 100%;
+}
+
+body.is-magazine-home .site-content {
+    max-width: var(--max);
+    padding-top: 0;
+}
+
+.magazine-shell {
+    width: 100%;
+}
+
+.magazine-shell--home {
+    padding-top: 1.5rem;
+}
+
+.magazine-hero {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 280px;
+    gap: 2rem 2.5rem;
+    padding-bottom: 2rem;
+    border-bottom: var(--rule-heavy);
+    margin-bottom: 2rem;
+}
+
+.magazine-hero-title,
+.page-content--magazine > h1:first-child {
+    font-size: clamp(2.25rem, 5vw, 3.25rem);
+    font-weight: 400;
+    font-style: italic;
+    line-height: 1.08;
+    margin-bottom: 1rem;
+    border: none;
+}
+
+.page-content--magazine > p:first-of-type {
+    font-size: 1.2rem;
+    line-height: 1.55;
+    margin-bottom: 1.5rem;
+    color: var(--primary);
+}
+
+.page-content--magazine > p:first-of-type strong {
+    color: var(--secondary);
+}
+
+.page-content--magazine > p:first-of-type::first-letter {
+    float: left;
+    font-size: 4rem;
+    line-height: 0.82;
+    padding-right: 0.1em;
+    margin-top: 0.06em;
+    color: var(--secondary);
+    font-weight: 400;
+}
+
+.page-content--magazine h2 {
+    margin-top: 2rem;
+    padding-top: 1rem;
+    border-top: var(--rule);
+}
+
+.magazine-rail {
+    border-left: var(--rule-heavy);
+    padding-left: 1.25rem;
+    align-self: start;
+    position: sticky;
+    top: 1rem;
+}
+
+.magazine-rail-title {
+    font-family: var(--font-sans);
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 1rem;
+}
+
+.magazine-rail-list {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 1.25rem;
+}
+
+.magazine-rail-list li {
+    margin-bottom: 0.85rem;
+    padding-bottom: 0.85rem;
+    border-bottom: var(--rule);
+}
+
+.magazine-rail-list a {
+    display: block;
+    text-decoration: none;
+    font-size: 0.95rem;
+    line-height: 1.35;
+    color: var(--text);
+}
+
+.magazine-rail-list a:hover {
+    color: var(--secondary);
+}
+
+.rail-kicker {
+    display: block;
+    font-family: var(--font-sans);
+    font-size: 0.6rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--secondary);
+    margin-bottom: 0.2rem;
+}
+
+.magazine-rail-box {
+    background: color-mix(in srgb, var(--secondary) 8%, var(--surface));
+    border: var(--rule);
+    padding: 0.85rem 1rem;
+    font-size: 0.85rem;
+    line-height: 1.5;
+}
+
+.rail-box-kicker {
+    font-family: var(--font-sans);
+    font-size: 0.6rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--secondary);
+    margin-bottom: 0.35rem;
+}
+
+.magazine-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1.25rem;
+}
+
+.magazine-card {
+    background: var(--surface);
+    border: var(--rule);
+    padding: 1.15rem 1.25rem;
+    display: flex;
+    flex-direction: column;
+    min-height: 100%;
+}
+
+.magazine-card--span2 {
+    grid-column: span 2;
+}
+
+.magazine-card--accent {
+    background: var(--primary);
+    color: var(--surface);
+    border-color: var(--primary);
+}
+
+.magazine-card--accent .magazine-card-kicker,
+.magazine-card--accent .magazine-card-deck {
+    color: color-mix(in srgb, var(--surface) 75%, transparent);
+}
+
+.magazine-card--accent .magazine-card-title,
+.magazine-card--accent .magazine-card-title a {
+    color: var(--surface);
+}
+
+.magazine-card-kicker {
+    font-family: var(--font-sans);
+    font-size: 0.6rem;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--secondary);
+    margin-bottom: 0.4rem;
+}
+
+.magazine-card-title {
+    font-size: 1.35rem;
+    font-style: italic;
+    font-weight: 400;
+    line-height: 1.2;
+    margin-bottom: 0.5rem;
+}
+
+.magazine-card-title a {
+    color: inherit;
+    text-decoration: none;
+}
+
+.magazine-card-title a:hover {
+    color: var(--accent);
+}
+
+.magazine-card--accent .magazine-card-title a:hover {
+    color: color-mix(in srgb, var(--surface) 85%, var(--accent));
+}
+
+.magazine-card-deck {
+    font-size: 0.92rem;
+    line-height: 1.55;
+    color: var(--muted);
+    flex: 1;
+    margin-bottom: 0.75rem;
+}
+
+.magazine-card-link {
+    font-family: var(--font-sans);
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    text-decoration: none;
+    color: var(--accent);
+}
+
+.magazine-shell--article {
+    padding-top: 2rem;
+}
+
+.magazine-article {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 240px;
+    gap: 2.5rem;
+    align-items: start;
+}
+
+.magazine-article-main {
+    max-width: 40rem;
+}
+
+.magazine-footer-inner {
+    max-width: var(--max);
+    margin: 0 auto;
+}
+
+.magazine-footer-note {
+    margin-top: 0.35rem;
+    font-size: 0.7rem;
+}
+
+.magazine-footer-note a {
+    text-decoration: none;
+}
+
+@media (max-width: 960px) {
+    .magazine-hero,
+    .magazine-article {
+        grid-template-columns: 1fr;
+    }
+
+    .magazine-rail {
+        border-left: none;
+        border-top: var(--rule-heavy);
+        padding-left: 0;
+        padding-top: 1.25rem;
+        position: static;
+    }
+
+    .magazine-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .magazine-card--span2 {
+        grid-column: span 1;
+    }
 }
 
 .page-masthead {
@@ -129,7 +438,7 @@ a:hover {
     color: var(--text);
 }
 
-.page p:first-of-type::first-letter {
+.page:not(.page-content--magazine) p:first-of-type::first-letter {
     float: left;
     font-size: 3.4rem;
     line-height: 0.85;

@@ -16,7 +16,7 @@ use Illuminate\Container\Container;
 
 class Application
 {
-    public const VERSION = '1.1.2';
+    public const VERSION = '1.1.3';
 
     private static ?self $instance = null;
 
@@ -145,8 +145,35 @@ class Application
         }
 
         $theme = (string) $this->config->get('system.theme', 'starter');
+        $themeRev = $this->themeViewRevision($theme);
 
-        return 'page:' . hash('sha256', $uri . '|' . $theme . '|' . $mtime);
+        return 'page:' . hash('sha256', $uri . '|' . $theme . '|' . $themeRev . '|' . $mtime);
+    }
+
+    /** Bust page cache when theme CSS/layout changes (not only page.md mtime). */
+    private function themeViewRevision(string $theme): string
+    {
+        $base = $this->rootPath . '/user/themes/' . $theme;
+        $parts = [];
+        foreach (
+            [
+                'assets/css/main.css',
+                'views/layouts/base.blade.php',
+                'views/layouts/default.blade.php',
+            ] as $rel
+        ) {
+            $file = $base . '/' . $rel;
+            $parts[] = is_file($file) ? (string) filemtime($file) : '0';
+        }
+
+        $partialsDir = $base . '/views/partials';
+        if (is_dir($partialsDir)) {
+            foreach (glob($partialsDir . '/*.blade.php') ?: [] as $partial) {
+                $parts[] = (string) filemtime($partial);
+            }
+        }
+
+        return implode('.', $parts);
     }
 
     public function config(): ConfigManager
