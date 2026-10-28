@@ -632,6 +632,56 @@ class MCPServer
             return "Theme '{$name}' scaffolded at user/themes/{$name}/";
         });
 
+        $this->registerTool('gspot_list_products', [
+            'description' => 'List commerce products (requires commerce plugin)',
+            'inputSchema' => ['type' => 'object', 'properties' => []],
+        ], function (array $args): string {
+            $registry = $this->commerceRegistry();
+            if ($registry === null) {
+                return 'Error: commerce plugin not installed.';
+            }
+
+            return json_encode($registry->all(false), JSON_PRETTY_PRINT);
+        });
+
+        $this->registerTool('gspot_save_product', [
+            'description' => 'Create or update a commerce product',
+            'inputSchema' => [
+                'type' => 'object',
+                'properties' => [
+                    'slug' => ['type' => 'string'],
+                    'title' => ['type' => 'string'],
+                    'description' => ['type' => 'string'],
+                    'price_cents' => ['type' => 'integer'],
+                    'currency' => ['type' => 'string'],
+                    'active' => ['type' => 'boolean'],
+                ],
+                'required' => ['slug', 'title', 'price_cents'],
+            ],
+        ], function (array $args): string {
+            $registry = $this->commerceRegistry();
+            if ($registry === null) {
+                return 'Error: commerce plugin not installed.';
+            }
+            $slug = PathGuard::sanitizeSlug($args['slug']);
+            if ($slug === '') {
+                return 'Error: Invalid slug.';
+            }
+            try {
+                $registry->save($slug, [
+                    'title' => $args['title'],
+                    'description' => $args['description'] ?? '',
+                    'price_cents' => (int) $args['price_cents'],
+                    'currency' => $args['currency'] ?? 'aud',
+                    'active' => $args['active'] ?? true,
+                ]);
+            } catch (\InvalidArgumentException $e) {
+                return 'Error: ' . $e->getMessage();
+            }
+
+            return "Product '{$slug}' saved.";
+        });
+
         $this->registerTool('gspot_list_mud_patterns', [
             'description' => 'List GSpot MUD HTML patterns (requires gspot-mud plugin)',
             'inputSchema' => ['type' => 'object', 'properties' => []],
@@ -734,6 +784,18 @@ class MCPServer
             ];
             return json_encode($info, JSON_PRETTY_PRINT);
         });
+    }
+
+    private function commerceRegistry(): ?\GSpot\UserPlugins\Commerce\ProductRegistry
+    {
+        $pluginDir = $this->app->rootPath() . '/user/plugins/commerce';
+        if (!is_dir($pluginDir)) {
+            return null;
+        }
+
+        require_once $pluginDir . '/classes/ProductRegistry.php';
+
+        return new \GSpot\UserPlugins\Commerce\ProductRegistry($pluginDir . '/data/products');
     }
 
     private function mudPatternRegistry(): ?\GSpot\UserPlugins\GspotMud\MudPatternRegistry

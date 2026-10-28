@@ -1,0 +1,51 @@
+.commerce-page {
+  --bg: hsl(270 22% 8%);
+  --text: #eee8f5;
+  --muted: #a89bb8;
+  --accent: hsl(300 85% 55%);
+  --card: hsl(270 18% 12%);
+  --border: hsl(270 15% 22%);
+  font-family: system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  margin: 0;
+  line-height: 1.5;
+}
+.commerce-header {
+  display: flex;
+  justify-content: space-between;
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid var(--border);
+}
+.commerce-header a { color: var(--accent); text-decoration: none; margin-left: 1rem; }
+.commerce-main { max-width: 56rem; margin: 0 auto; padding: 2rem 1.5rem; }
+.commerce-lead { color: var(--muted); }
+.commerce-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr));
+  gap: 1.25rem;
+  margin-top: 1.5rem;
+}
+.commerce-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 0.65rem;
+  padding: 1rem;
+}
+.commerce-card-img { width: 100%; border-radius: 0.4rem; margin-bottom: 0.75rem; }
+.commerce-price { font-weight: 700; color: var(--accent); }
+.commerce-card button, .commerce-checkout, .commerce-product button {
+  background: var(--accent);
+  color: #111;
+  border: 0;
+  padding: 0.5rem 1rem;
+  border-radius: 0.4rem;
+  font-weight: 700;
+  cursor: pointer;
+  margin-top: 0.5rem;
+}
+.commerce-table { width: 100%; border-collapse: collapse; margin: 1rem 0; }
+.commerce-table th, .commerce-table td { padding: 0.5rem; border-bottom: 1px solid var(--border); text-align: left; }
+.commerce-error { color: #f87171; }
+.commerce-note { color: var(--muted); font-size: 0.9rem; }
+.commerce-success { text-align: center; padding-top: 4rem; }

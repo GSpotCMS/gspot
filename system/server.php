@@ -92,6 +92,19 @@ use Symfony\Component\HttpFoundation\Request;
 $app = Application::getInstance();
 $app->boot();
 
+// Commerce plugin HTTP (cart, checkout, storefront)
+if (str_starts_with($uri, '/commerce')) {
+    $commerce = $app->plugins()->getPlugin('commerce');
+    if ($commerce !== null && method_exists($commerce, 'handleHttp')) {
+        $request = Request::createFromGlobals();
+        $response = $commerce->handleHttp($uri, $request);
+        if ($response !== null) {
+            $response->send();
+            return;
+        }
+    }
+}
+
 // Handle admin routes
 if (str_starts_with($uri, '/' . trim($app->config()->get('system.admin.prefix', 'gspot-admin'), '/'))) {
     $admin = new AdminRouter($app);

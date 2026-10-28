@@ -1,0 +1,14 @@
+name: commerce
+version: 0.1.0
+description: Flat-file products, session cart, Stripe Checkout. No database required.
+author: FutureVision Labs · Team DC
+enabled: true
+priority: 25
+events:
+  - onAppBoot
+  - onPageRender
+config:
+  products_path: data/products
+  shop_path: /commerce/shop
+  currency: aud
+  stripe_secret_env: STRIPE_SECRET_KEY

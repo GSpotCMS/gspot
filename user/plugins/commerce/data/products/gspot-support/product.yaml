@@ -1,0 +1,8 @@
+slug: gspot-support
+title: GSpot Groundswell Support
+description: One-time tip to fund docs, patterns, and open-source village plugins.
+price_cents: 500
+currency: aud
+image: ''
+active: true
+stripe_price_id: ''

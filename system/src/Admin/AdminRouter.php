@@ -132,6 +132,14 @@ class AdminRouter
         $this->route('GET', '/mud/patterns/new', fn($r) => $this->mudPatternEdit($r));
         $this->route('POST', '/mud/patterns/save', fn($r) => $this->mudPatternSave($r));
         $this->route('POST', '/mud/patterns/delete', fn($r) => $this->mudPatternDelete($r));
+
+        if ($this->app->plugins()->isLoaded('commerce')) {
+            $this->route('GET', '/commerce/products', fn($r) => $this->commerceProductsList($r));
+            $this->route('GET', '/commerce/products/new', fn($r) => $this->commerceProductEdit($r));
+            $this->route('GET', '/commerce/products/edit', fn($r) => $this->commerceProductEdit($r));
+            $this->route('POST', '/commerce/products/save', fn($r) => $this->commerceProductSave($r));
+            $this->route('POST', '/commerce/products/delete', fn($r) => $this->commerceProductDelete($r));
+        }
     }
 
     private function route(string $method, string $path, callable $handler): void
@@ -474,6 +482,7 @@ HTML;
             ['/themes', 'Themes', '🎨'],
             ['/javabean', 'JavaBean', '☕'],
             ['/mud/patterns', 'MUD Patterns', '🧱'],
+            ['/commerce/products', 'Commerce', '🛒'],
             ['/settings', 'Settings', '⚙️'],
         ];
 
@@ -498,6 +507,7 @@ HTML;
             'javabean' => $this->renderJavaBeanContent($data),
             'mud-patterns' => $this->renderMudPatternsContent($data),
             'mud-pattern-edit' => $this->renderMudPatternEditContent($data),
+            'commerce-admin' => (string) ($data['body'] ?? ''),
             default => '<h1>404</h1>',
         };
     }
@@ -772,6 +782,60 @@ HTML;
 
         $html .= '</div>';
         return $html;
+    }
+
+    private function commerceAdmin(): \GSpot\UserPlugins\Commerce\CommerceAdmin
+    {
+        require_once $this->app->rootPath() . '/user/plugins/commerce/classes/CommerceAdmin.php';
+
+        return new \GSpot\UserPlugins\Commerce\CommerceAdmin($this->app);
+    }
+
+    private function commerceProductsList(Request $request): Response
+    {
+        return new Response($this->render('commerce-admin', [
+            'body' => $this->commerceAdmin()->productsListContent(),
+        ]));
+    }
+
+    private function commerceProductEdit(Request $request): Response
+    {
+        $slug = (string) $request->query->get('slug', '');
+
+        return new Response($this->render('commerce-admin', [
+            'body' => $this->commerceAdmin()->productEditContent($slug, Csrf::field()),
+        ]));
+    }
+
+    private function commerceProductSave(Request $request): Response
+    {
+        $slug = PathGuard::sanitizeSlug((string) $request->request->get('slug', ''));
+        if ($slug === '') {
+            return new Response('Invalid slug', 400);
+        }
+
+        $price = (float) $request->request->get('price', '0');
+        $this->commerceAdmin()->registry()->save($slug, [
+            'title' => $request->request->get('title', ''),
+            'description' => $request->request->get('description', ''),
+            'price_cents' => (int) round($price * 100),
+            'currency' => $request->request->get('currency', 'aud'),
+            'image' => $request->request->get('image', ''),
+            'stripe_price_id' => $request->request->get('stripe_price_id', ''),
+            'active' => $request->request->has('active'),
+        ]);
+
+        return new RedirectResponse($this->prefix . '/commerce/products');
+    }
+
+    private function commerceProductDelete(Request $request): Response
+    {
+        $slug = PathGuard::sanitizeSlug((string) $request->request->get('slug', ''));
+        if ($slug !== '') {
+            $this->commerceAdmin()->registry()->delete($slug);
+        }
+
+        return new RedirectResponse($this->prefix . '/commerce/products');
     }
 
     private function mudPatternRegistry(): ?\GSpot\UserPlugins\GspotMud\MudPatternRegistry

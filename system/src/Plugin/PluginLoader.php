@@ -94,4 +94,9 @@ class PluginLoader
     {
         return isset($this->plugins[$name]);
     }
+
+    public function getPlugin(string $name): ?object
+    {
+        return $this->plugins[$name] ?? null;
+    }
 }

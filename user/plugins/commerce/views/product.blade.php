@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ $product['title'] ?? 'Product' }} — {{ $site['title'] }}</title>
+    <link rel="stylesheet" href="{{ $commerceCss ?? '/plugin-assets/commerce/css/shop.css' }}">
+</head>
+<body class="commerce-page">
+<header class="commerce-header">
+    <a href="/commerce/shop">← Shop</a>
+    <a href="/commerce/cart">Cart</a>
+</header>
+<main class="commerce-main commerce-product">
+    @if(!empty($product['image']))
+        <img src="{{ $product['image'] }}" alt="" class="commerce-hero-img">
+    @endif
+    <h1>{{ $product['title'] ?? '' }}</h1>
+    <p>{{ $product['description'] ?? '' }}</p>
+    @php $price = (int)($product['price_cents'] ?? 0); $cur = $product['currency'] ?? 'aud'; @endphp
+    <p class="commerce-price">{{ strtoupper($cur) }} {{ number_format($price / 100, 2) }}</p>
+    <form method="POST" action="/commerce/cart/add">
+        <input type="hidden" name="slug" value="{{ $product['slug'] ?? '' }}">
+        <label>Qty <input type="number" name="qty" value="1" min="1" max="99"></label>
+        <button type="submit">Add to cart</button>
+    </form>
+</main>
+</body>
+</html>
