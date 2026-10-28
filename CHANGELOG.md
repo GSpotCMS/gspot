@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.1.1 — 2026-10-28
+
+- Fix **synthwave** `theme.yaml` parse error (unclosed quote on `sunset_strip.muted`).
+
 ## 1.1.0 — 2026-10-28
 
 - **Themes:** **editorial**, **synthwave**, and **commerce** starter themes (layouts, token bridges, two theme patterns each).
