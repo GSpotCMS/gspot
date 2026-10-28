@@ -54,7 +54,25 @@
             @endif
         </section>
 
-        @if(($checkout_mode ?? 'payment') === 'payment')
+        @if(!empty($checkout_currency) && $checkout_currency !== '—')
+            <p class="commerce-note">Checkout currency: <strong>{{ $checkout_currency }}</strong> (one currency per order)</p>
+        @endif
+
+        <section class="commerce-coupon">
+            @if(!empty($gift_card))
+                <p>Gift card <code>{{ $gift_card['code'] ?? '' }}</code> (−{{ number_format(($gift_redemption_cents ?? 0) / 100, 2) }})</p>
+                <form method="POST" action="/commerce/cart/gift-card/remove">
+                    <button type="submit">Remove gift card</button>
+                </form>
+            @else
+                <form method="POST" action="/commerce/cart/gift-card" class="commerce-coupon-form">
+                    <label>Gift card <input name="code" placeholder="SPOT-GIFT-25" autocomplete="off"></label>
+                    <button type="submit">Apply</button>
+                </form>
+            @endif
+        </section>
+
+        @if(($checkout_mode ?? 'payment') === 'payment' && empty($stripe_automatic_tax))
             <section class="commerce-coupon">
                 <form method="POST" action="/commerce/cart/tax-country" class="commerce-coupon-form">
                     <label>Tax region
@@ -83,8 +101,13 @@
         @if(!empty($shipping_cents))
             <p class="commerce-subtotal"><strong>Shipping:</strong> {{ number_format($shipping_cents / 100, 2) }}</p>
         @endif
-        @if(!empty($tax_cents))
+        @if(!empty($stripe_automatic_tax))
+            <p class="commerce-note">Stripe Tax is enabled — tax calculated at checkout from billing address.</p>
+        @elseif(!empty($tax_cents))
             <p class="commerce-subtotal"><strong>Tax ({{ $tax_country ?? 'AU' }} {{ $tax_rate ?? 0 }}%):</strong> {{ number_format($tax_cents / 100, 2) }}</p>
+        @endif
+        @if(!empty($gift_redemption_cents))
+            <p class="commerce-subtotal"><strong>Gift card:</strong> −{{ number_format($gift_redemption_cents / 100, 2) }}</p>
         @endif
         <p class="commerce-total"><strong>Total:</strong> {{ number_format(($total_cents ?? $subtotal_cents) / 100, 2) }}</p>
 

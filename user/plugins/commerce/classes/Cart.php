@@ -13,10 +13,12 @@ final class Cart
     private const COUPON_KEY = 'gspot_commerce_coupon';
     private const TAX_COUNTRY_KEY = 'gspot_commerce_tax_country';
     private const REMINDER_EMAIL_KEY = 'gspot_commerce_reminder_email';
+    private const GIFT_CARD_KEY = 'gspot_commerce_gift_card';
 
     public function __construct(
         private readonly ProductRegistry $products,
         private readonly ?CouponRegistry $coupons = null,
+        private readonly ?GiftCardRegistry $giftCards = null,
     ) {}
 
     /** @return array<string, int> slug => qty */
@@ -126,14 +128,95 @@ final class Cart
         return 0;
     }
 
-    public function taxableCents(int $flatShippingCents): int
+    public function taxableCents(int $flatShippingCents, string $currency = 'aud'): int
     {
-        return max(0, $this->subtotalCents() - $this->discountCents() + $this->shippingCents($flatShippingCents));
+        return max(0, $this->subtotalCents() - $this->discountCents() + $this->shippingCents($flatShippingCents) - $this->giftRedemptionCents($flatShippingCents, $currency));
     }
 
-    public function totalCents(int $flatShippingCents = 0, int $taxCents = 0): int
+    public function totalCents(int $flatShippingCents = 0, int $taxCents = 0, string $currency = 'aud'): int
     {
-        return max(0, $this->taxableCents($flatShippingCents) + max(0, $taxCents));
+        return max(0, $this->taxableCents($flatShippingCents, $currency) + max(0, $taxCents));
+    }
+
+    public function checkoutCurrency(): string
+    {
+        $currency = null;
+        foreach ($this->lines() as $line) {
+            $cur = strtolower((string) ($line['product']['currency'] ?? 'aud'));
+            if ($currency === null) {
+                $currency = $cur;
+            } elseif ($currency !== $cur) {
+                return '';
+            }
+        }
+
+        return $currency ?? 'aud';
+    }
+
+    public function validateCheckoutCurrency(): ?string
+    {
+        if ($this->checkoutCurrency() === '') {
+            return 'Mixed currencies in cart. Checkout one currency at a time.';
+        }
+
+        return null;
+    }
+
+    public function applyGiftCard(string $code): ?string
+    {
+        if ($this->giftCards === null) {
+            return 'Gift cards are not available';
+        }
+
+        $currency = $this->checkoutCurrency();
+        if ($currency === '') {
+            return 'Resolve mixed currencies before applying a gift card';
+        }
+
+        $card = $this->giftCards->resolveForCheckout($code, $currency);
+        if ($card === null) {
+            return 'Invalid gift card or wrong currency';
+        }
+
+        SessionGuard::start();
+        $_SESSION[self::GIFT_CARD_KEY] = (string) ($card['code'] ?? '');
+
+        return null;
+    }
+
+    public function removeGiftCard(): void
+    {
+        SessionGuard::start();
+        unset($_SESSION[self::GIFT_CARD_KEY]);
+    }
+
+    /** @return array<string, mixed>|null */
+    public function appliedGiftCard(?string $currency = null): ?array
+    {
+        SessionGuard::start();
+        $code = (string) ($_SESSION[self::GIFT_CARD_KEY] ?? '');
+        if ($code === '' || $this->giftCards === null) {
+            return null;
+        }
+
+        $cur = $currency ?? $this->checkoutCurrency();
+        if ($cur === '') {
+            return null;
+        }
+
+        return $this->giftCards->resolveForCheckout($code, $cur);
+    }
+
+    public function giftRedemptionCents(int $flatShippingCents, string $currency): int
+    {
+        $card = $this->appliedGiftCard($currency);
+        if ($card === null) {
+            return 0;
+        }
+
+        $due = max(0, $this->subtotalCents() - $this->discountCents() + $this->shippingCents($flatShippingCents));
+
+        return min((int) ($card['balance_cents'] ?? 0), $due);
     }
 
     public function setTaxCountry(string $countryCode): void
@@ -221,6 +304,12 @@ final class Cart
     {
         SessionGuard::start();
         unset($_SESSION[self::SESSION_KEY]);
+    }
+
+    public function clearCheckoutSession(): void
+    {
+        SessionGuard::start();
+        unset($_SESSION[self::SESSION_KEY], $_SESSION[self::COUPON_KEY], $_SESSION[self::GIFT_CARD_KEY]);
     }
 
     /** @return list<array{product: array<string, mixed>, qty: int, line_cents: int}> */

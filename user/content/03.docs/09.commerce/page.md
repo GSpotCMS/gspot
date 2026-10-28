@@ -83,8 +83,25 @@ Schedule that hourly on your host. Paid orders clear the abandoned record.
 
 **Admin → Commerce** manages products, **Coupons**, and **Orders**.
 
+## Stripe Tax (automatic)
+
+Set `STRIPE_AUTOMATIC_TAX=1` and enable Tax in the Stripe Dashboard. Checkout collects billing address; manual YAML tax lines are skipped.
+
+## Gift cards
+
+YAML in `data/gift_cards/` (demo `SPOT-GIFT-25`). Apply on cart; balance redeems on webhook. Currency must match the cart.
+
+## Multi-currency
+
+Each product has a `currency` field. Carts with mixed currencies cannot checkout until resolved.
+
+## Subscription lifecycle
+
+Webhooks track `customer.subscription.*` and `invoice.paid` / `invoice.payment_failed` into `data/subscriptions/`. View in **Admin → Commerce → Subscriptions**.
+
 ## MCP
 
 - `gspot_list_products` / `gspot_save_product`
 - `gspot_list_orders`
 - `gspot_list_coupons` / `gspot_save_coupon`
+- `gspot_list_gift_cards` / `gspot_save_gift_card`

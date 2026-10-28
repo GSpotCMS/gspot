@@ -35,6 +35,7 @@ final class StripeCheckout
         int $shippingCents = 0,
         int $taxCents = 0,
         string $mode = 'payment',
+        bool $automaticTax = false,
     ): Session {
         if (!$this->isConfigured()) {
             throw new \RuntimeException('Stripe secret key not configured');
@@ -46,9 +47,11 @@ final class StripeCheckout
 
         $lineItems = $this->buildPaymentLineItems($lines, $defaultCurrency);
         $this->appendFeeLine($lineItems, $lines, $defaultCurrency, $shippingCents, 'Shipping', 'Flat-rate shipping');
-        $this->appendFeeLine($lineItems, $lines, $defaultCurrency, $taxCents, 'Tax', 'Regional tax');
+        if (!$automaticTax) {
+            $this->appendFeeLine($lineItems, $lines, $defaultCurrency, $taxCents, 'Tax', 'Regional tax');
+        }
 
-        return Session::create($this->payload($lineItems, 'payment', $metadata));
+        return Session::create($this->payload($lineItems, 'payment', $metadata, $automaticTax));
     }
 
     /**
@@ -69,7 +72,7 @@ final class StripeCheckout
             ];
         }
 
-        $payload = $this->payload($lineItems, 'subscription', $metadata);
+        $payload = $this->payload($lineItems, 'subscription', $metadata, false);
         unset($payload['allow_promotion_codes']);
 
         return Session::create($payload);
@@ -148,10 +151,10 @@ final class StripeCheckout
 
     /**
      * @param list<array<string, mixed>> $lineItems
-     * @param array{coupon?: string, cart?: string, tax_country?: string, reminder_email?: string} $metadata
+     * @param array{coupon?: string, cart?: string, tax_country?: string, reminder_email?: string, gift_card?: string, gift_cents?: int} $metadata
      * @return array<string, mixed>
      */
-    private function payload(array $lineItems, string $mode, array $metadata): array
+    private function payload(array $lineItems, string $mode, array $metadata, bool $automaticTax): array
     {
         $meta = [];
         if (($metadata['coupon'] ?? '') !== '') {
@@ -166,6 +169,10 @@ final class StripeCheckout
         if (($metadata['reminder_email'] ?? '') !== '') {
             $meta['gspot_reminder_email'] = substr((string) $metadata['reminder_email'], 0, 120);
         }
+        if (($metadata['gift_card'] ?? '') !== '') {
+            $meta['gspot_gift_card'] = substr((string) $metadata['gift_card'], 0, 32);
+            $meta['gspot_gift_cents'] = (string) max(0, (int) ($metadata['gift_cents'] ?? 0));
+        }
 
         $payload = [
             'mode' => $mode,
@@ -176,6 +183,10 @@ final class StripeCheckout
         ];
         if ($meta !== []) {
             $payload['metadata'] = $meta;
+        }
+        if ($automaticTax) {
+            $payload['automatic_tax'] = ['enabled' => true];
+            $payload['billing_address_collection'] = 'required';
         }
 
         return $payload;

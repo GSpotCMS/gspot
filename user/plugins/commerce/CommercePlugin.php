@@ -34,6 +34,8 @@ class CommercePlugin extends AbstractPlugin
         require_once __DIR__ . '/classes/BuyerReceiptMailer.php';
         require_once __DIR__ . '/classes/AbandonedCartRegistry.php';
         require_once __DIR__ . '/classes/AbandonedCartReminder.php';
+        require_once __DIR__ . '/classes/GiftCardRegistry.php';
+        require_once __DIR__ . '/classes/SubscriptionRegistry.php';
 
         $this->app->renderer()->addViewPath(__DIR__ . '/views');
         $this->app->renderer()->share('commerceCss', '/plugin-assets/commerce/css/shop.css');
@@ -90,6 +92,8 @@ HTML;
             $path === '/commerce/cart/coupon/remove' && $request->isMethod('POST') => $this->cartCouponRemove($request),
             $path === '/commerce/cart/tax-country' && $request->isMethod('POST') => $this->cartTaxCountry($request),
             $path === '/commerce/cart/reminder-email' && $request->isMethod('POST') => $this->cartReminderEmail($request),
+            $path === '/commerce/cart/gift-card' && $request->isMethod('POST') => $this->cartGiftCard($request),
+            $path === '/commerce/cart/gift-card/remove' && $request->isMethod('POST') => $this->cartGiftCardRemove($request),
             $path === '/commerce/cron/abandoned' => $this->cronAbandoned($request),
             $path === '/commerce/success' => $this->success($request),
             $path === '/commerce/webhook/stripe' && $request->isMethod('POST') => $this->stripeWebhook($request),
@@ -111,12 +115,17 @@ HTML;
 
     public function cart(): Cart
     {
-        return $this->cart ??= new Cart($this->registry(), $this->coupons());
+        return $this->cart ??= new Cart($this->registry(), $this->coupons(), $this->giftCards());
     }
 
     public function coupons(): CouponRegistry
     {
         return new CouponRegistry($this->couponsDir());
+    }
+
+    public function giftCards(): GiftCardRegistry
+    {
+        return new GiftCardRegistry($this->giftCardsDir());
     }
 
     private function shop(Request $request): Response
@@ -205,6 +214,23 @@ HTML;
         return new RedirectResponse('/commerce/cart');
     }
 
+    private function cartGiftCard(Request $request): Response
+    {
+        $error = $this->cart()->applyGiftCard((string) $request->request->get('code', ''));
+        if ($error !== null) {
+            return new Response($this->renderView('cart', $this->cartViewData($error)), 422);
+        }
+
+        return new RedirectResponse('/commerce/cart');
+    }
+
+    private function cartGiftCardRemove(Request $request): Response
+    {
+        $this->cart()->removeGiftCard();
+
+        return new RedirectResponse('/commerce/cart');
+    }
+
     private function cronAbandoned(Request $request): Response
     {
         if (!$this->cronAuthorized($request)) {
@@ -228,40 +254,51 @@ HTML;
             if ($modeError !== null) {
                 throw new \RuntimeException($modeError);
             }
+            $currencyError = $this->cart()->validateCheckoutCurrency();
+            if ($currencyError !== null) {
+                throw new \RuntimeException($currencyError);
+            }
 
             $cartSnap = json_encode($this->cart()->snapshotForOrder()) ?: '[]';
             $coupon = $this->cart()->appliedCoupon();
+            $giftCard = $this->cart()->appliedGiftCard();
             $discount = $this->cart()->discountCents();
+            $flatShip = $this->flatShippingCents();
+            $currency = $this->cart()->checkoutCurrency();
+            $giftRed = $this->cart()->giftRedemptionCents($flatShip, $currency);
             $lines = $this->cart()->lines();
-            if ($discount > 0 && $this->cart()->checkoutMode() === 'payment') {
-                $lines = (new DiscountCalculator())->applyToLines($lines, $discount);
+            $totalDiscount = $discount + $giftRed;
+            if ($totalDiscount > 0 && $this->cart()->checkoutMode() === 'payment') {
+                $lines = (new DiscountCalculator())->applyToLines($lines, $totalDiscount);
             }
 
-            $flatShip = $this->flatShippingCents();
             $mode = $this->cart()->checkoutMode();
+            $autoTax = $this->stripeAutomaticTax();
             $ship = $mode === 'payment' ? $this->cart()->shippingCents($flatShip) : 0;
             $tax = 0;
-            if ($mode === 'payment') {
+            if ($mode === 'payment' && !$autoTax) {
                 $rate = $this->taxRegions()->rateFor($this->cart()->taxCountry());
-                $tax = (new TaxCalculator())->taxCents($this->cart()->taxableCents($flatShip), $rate);
+                $tax = (new TaxCalculator())->taxCents($this->cart()->taxableCents($flatShip, $currency), $rate);
             }
 
             $reminderEmail = $this->cart()->reminderEmail();
             $session = $this->stripe()->createSession(
                 $lines,
-                $this->defaultCurrency(),
+                $currency !== '' ? $currency : $this->defaultCurrency(),
                 [
                     'coupon' => (string) ($coupon['code'] ?? ''),
                     'cart' => $cartSnap,
                     'tax_country' => $this->cart()->taxCountry(),
                     'reminder_email' => $reminderEmail,
+                    'gift_card' => (string) ($giftCard['code'] ?? ''),
+                    'gift_cents' => $giftRed,
                 ],
                 $ship,
                 $tax,
                 $mode,
+                $autoTax,
             );
-            $this->cart()->clear();
-            $this->cart()->removeCoupon();
+            $this->cart()->clearCheckoutSession();
             if ($reminderEmail !== '') {
                 $this->abandonedCarts()->deleteByEmail($reminderEmail);
             }
@@ -325,6 +362,8 @@ HTML;
                 $this->digitalFulfillment(),
                 $this->buyerReceiptMailer(),
                 $this->abandonedCarts(),
+                $this->giftCards(),
+                $this->subscriptions(),
             );
             $handler->handle($request->getContent(), $request->headers->get('Stripe-Signature'));
 
@@ -369,6 +408,28 @@ HTML;
     private function flatShippingCents(): int
     {
         return max(0, (int) ($this->config['config']['flat_shipping_cents'] ?? 0));
+    }
+
+    private function stripeAutomaticTax(): bool
+    {
+        $env = (string) ($this->config['config']['stripe_automatic_tax_env'] ?? 'STRIPE_AUTOMATIC_TAX');
+        $flag = strtolower(trim((string) (getenv($env) ?: ($_ENV[$env] ?? '0'))));
+
+        return in_array($flag, ['1', 'true', 'yes', 'on'], true);
+    }
+
+    private function giftCardsDir(): string
+    {
+        $rel = (string) ($this->config['config']['gift_cards_path'] ?? 'data/gift_cards');
+
+        return __DIR__ . '/' . ltrim($rel, '/');
+    }
+
+    private function subscriptions(): SubscriptionRegistry
+    {
+        $rel = (string) ($this->config['config']['subscriptions_path'] ?? 'data/subscriptions');
+
+        return new SubscriptionRegistry(__DIR__ . '/' . ltrim($rel, '/'));
     }
 
     private function downloadGrants(): DownloadGrantRegistry
@@ -422,21 +483,29 @@ HTML;
     {
         $flatShip = $this->flatShippingCents();
         $mode = $this->cart()->checkoutMode();
+        $currency = $this->cart()->checkoutCurrency();
+        $displayCurrency = $currency !== '' ? strtoupper($currency) : '—';
+        $autoTax = $this->stripeAutomaticTax();
         $rate = $this->taxRegions()->rateFor($this->cart()->taxCountry());
-        $tax = $mode === 'payment'
-            ? (new TaxCalculator())->taxCents($this->cart()->taxableCents($flatShip), $rate)
+        $tax = ($mode === 'payment' && !$autoTax && $currency !== '')
+            ? (new TaxCalculator())->taxCents($this->cart()->taxableCents($flatShip, $currency), $rate)
             : 0;
+        $giftRed = $currency !== '' ? $this->cart()->giftRedemptionCents($flatShip, $currency) : 0;
 
         $data = [
             'lines' => $this->cart()->lines(),
             'subtotal_cents' => $this->cart()->subtotalCents(),
             'discount_cents' => $this->cart()->discountCents(),
+            'gift_redemption_cents' => $giftRed,
+            'gift_card' => $currency !== '' ? $this->cart()->appliedGiftCard($currency) : null,
+            'checkout_currency' => $displayCurrency,
             'shipping_cents' => $mode === 'payment' ? $this->cart()->shippingCents($flatShip) : 0,
             'tax_cents' => $tax,
             'tax_rate' => $rate,
             'tax_country' => $this->cart()->taxCountry(),
             'tax_regions' => $this->taxRegions()->countryOptions(),
-            'total_cents' => $this->cart()->totalCents($flatShip, $tax),
+            'stripe_automatic_tax' => $autoTax,
+            'total_cents' => $currency !== '' ? $this->cart()->totalCents($flatShip, $tax, $currency) : 0,
             'coupon' => $this->cart()->appliedCoupon(),
             'reminder_email' => $this->cart()->reminderEmail(),
             'checkout_mode' => $mode,

@@ -21,6 +21,8 @@ final class StripeWebhook
         private readonly ?DigitalFulfillment $digital = null,
         private readonly ?BuyerReceiptMailer $buyerMailer = null,
         private readonly ?AbandonedCartRegistry $abandoned = null,
+        private readonly ?GiftCardRegistry $giftCards = null,
+        private readonly ?SubscriptionRegistry $subscriptions = null,
     ) {
         if ($this->secretKey !== '') {
             Stripe::setApiKey($this->secretKey);
@@ -35,9 +37,12 @@ final class StripeWebhook
 
         $event = Webhook::constructEvent($payload, (string) $signatureHeader, $this->webhookSecret);
 
-        if ($event->type === 'checkout.session.completed') {
-            $this->recordCheckoutSession($event);
-        }
+        match ($event->type) {
+            'checkout.session.completed' => $this->recordCheckoutSession($event),
+            'customer.subscription.updated', 'customer.subscription.deleted' => $this->recordSubscriptionLifecycle($event),
+            'invoice.paid', 'invoice.payment_failed' => $this->recordInvoiceLifecycle($event),
+            default => null,
+        };
     }
 
     private function recordCheckoutSession(Event $event): void
@@ -65,20 +70,30 @@ final class StripeWebhook
         $cartJson = (string) ($session->metadata->gspot_cart ?? '');
         $taxCountry = (string) ($session->metadata->gspot_tax_country ?? '');
         $reminderEmail = (string) ($session->metadata->gspot_reminder_email ?? '');
+        $giftCode = (string) ($session->metadata->gspot_gift_card ?? '');
+        $giftCents = (int) ($session->metadata->gspot_gift_cents ?? 0);
+        $checkoutCurrency = strtolower((string) ($session->currency ?? 'aud'));
 
         $order = [
             'status' => 'paid',
             'email' => (string) ($session->customer_details->email ?? $session->customer_email ?? ''),
             'amount_total' => (int) ($session->amount_total ?? 0),
-            'currency' => strtolower((string) ($session->currency ?? 'aud')),
+            'currency' => $checkoutCurrency,
             'payment_status' => (string) ($session->payment_status ?? ''),
             'line_items' => $lines,
             'coupon' => $coupon,
+            'gift_card' => $giftCode,
+            'gift_redeemed_cents' => $giftCents,
             'tax_country' => $taxCountry,
             'cart_snapshot' => $cartJson,
             'billing_mode' => (string) ($session->mode ?? 'payment'),
             'created' => date('c', (int) ($session->created ?? time())),
         ];
+
+        $subscriptionId = (string) ($session->subscription ?? '');
+        if ($subscriptionId !== '') {
+            $order['stripe_subscription_id'] = $subscriptionId;
+        }
 
         if ($this->digital !== null && $cartJson !== '') {
             $order['downloads'] = $this->digital->grantForCart($id, $cartJson);
@@ -89,6 +104,17 @@ final class StripeWebhook
         if ($coupon !== '' && $this->coupons !== null) {
             $this->coupons->incrementUses($coupon);
         }
+        if ($giftCode !== '' && $giftCents > 0 && $this->giftCards !== null) {
+            $this->giftCards->redeem($giftCode, $giftCents);
+        }
+
+        if ($subscriptionId !== '' && $this->subscriptions !== null) {
+            $this->subscriptions->upsert($subscriptionId, 'active', [
+                'email' => (string) ($order['email'] ?? ''),
+                'checkout_session' => $id,
+            ]);
+        }
+
         $this->notifier?->notify($id, $order);
         $this->buyerMailer?->send($id, $order);
 
@@ -96,6 +122,47 @@ final class StripeWebhook
         if ($clearEmail !== '' && $this->abandoned !== null) {
             $this->abandoned->deleteByEmail($clearEmail);
         }
+    }
+
+    private function recordSubscriptionLifecycle(Event $event): void
+    {
+        if ($this->subscriptions === null) {
+            return;
+        }
+
+        $object = $event->data->object;
+        $id = (string) ($object->id ?? '');
+        if ($id === '') {
+            return;
+        }
+
+        $status = (string) ($object->status ?? 'unknown');
+        if ($event->type === 'customer.subscription.deleted') {
+            $status = 'canceled';
+        }
+
+        $this->subscriptions->upsert($id, $status, [
+            'email' => (string) ($object->customer_email ?? ''),
+        ]);
+    }
+
+    private function recordInvoiceLifecycle(Event $event): void
+    {
+        if ($this->subscriptions === null) {
+            return;
+        }
+
+        $invoice = $event->data->object;
+        $subscriptionId = (string) ($invoice->subscription ?? '');
+        if ($subscriptionId === '') {
+            return;
+        }
+
+        $invoiceStatus = $event->type === 'invoice.paid' ? 'paid' : 'payment_failed';
+        $this->subscriptions->upsert($subscriptionId, 'active', [
+            'last_invoice_status' => $invoiceStatus,
+            'email' => (string) ($invoice->customer_email ?? ''),
+        ]);
     }
 
     private function fulfillInventory(string $cartJson): void

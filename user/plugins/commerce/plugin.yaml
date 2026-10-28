@@ -1,5 +1,5 @@
 name: commerce
-version: 0.5.0
+version: 0.6.0
 description: Flat-file products, session cart, Stripe Checkout. No database required.
 author: FutureVision Labs · Team DC
 enabled: true
@@ -22,6 +22,9 @@ config:
   abandoned_idle_minutes: 60
   cron_key_env: COMMERCE_CRON_KEY
   buyer_receipts_env: COMMERCE_BUYER_RECEIPTS
+  gift_cards_path: data/gift_cards
+  subscriptions_path: data/subscriptions
+  stripe_automatic_tax_env: STRIPE_AUTOMATIC_TAX
   shop_path: /commerce/shop
   currency: aud
   stripe_secret_env: STRIPE_SECRET_KEY

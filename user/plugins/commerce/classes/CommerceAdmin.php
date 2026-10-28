@@ -158,6 +158,8 @@ HTML;
 <p><a class="btn btn-primary" href="{$prefix}/commerce/products/new">+ New product</a>
    <a class="btn" href="{$prefix}/commerce/orders">Orders</a>
    <a class="btn" href="{$prefix}/commerce/coupons">Coupons</a>
+   <a class="btn" href="{$prefix}/commerce/gift-cards">Gift cards</a>
+   <a class="btn" href="{$prefix}/commerce/subscriptions">Subscriptions</a>
    <a class="btn" href="/commerce/shop" target="_blank" rel="noopener">View shop</a></p>
 <table class="admin-table">
   <thead><tr><th>Title</th><th>Slug</th><th>Price</th><th>Stock</th><th>Active</th><th></th></tr></thead>
@@ -324,6 +326,53 @@ HTML;
         require_once $this->app->rootPath() . '/user/plugins/commerce/classes/ProductRegistry.php';
 
         return new ProductRegistry($this->app->rootPath() . '/user/plugins/commerce/data/products');
+    }
+
+    public function giftCardsListContent(): string
+    {
+        $prefix = $this->adminPrefix();
+        require_once $this->app->rootPath() . '/user/plugins/commerce/classes/GiftCardRegistry.php';
+        $rows = '';
+        foreach ((new GiftCardRegistry($this->app->rootPath() . '/user/plugins/commerce/data/gift_cards'))->all() as $card) {
+            $code = htmlspecialchars($card['code'] ?? '');
+            $bal = number_format(((int) ($card['balance_cents'] ?? 0)) / 100, 2);
+            $cur = strtoupper($card['currency'] ?? 'aud');
+            $active = ($card['active'] ?? true) ? 'Yes' : 'No';
+            $rows .= "<tr><td><code>{$code}</code></td><td>{$cur} {$bal}</td><td>{$active}</td></tr>";
+        }
+        if ($rows === '') {
+            $rows = '<tr><td colspan="3" class="empty">No gift cards</td></tr>';
+        }
+
+        return <<<HTML
+<h1>🛒 Gift cards</h1>
+<p><a class="btn" href="{$prefix}/commerce/products">← Products</a></p>
+<p>Demo: <code>SPOT-GIFT-25</code> (AUD 25.00). Edit YAML under <code>data/gift_cards/</code> or use MCP <code>gspot_save_gift_card</code>.</p>
+<table class="admin-table"><thead><tr><th>Code</th><th>Balance</th><th>Active</th></tr></thead><tbody>{$rows}</tbody></table>
+HTML;
+    }
+
+    public function subscriptionsListContent(): string
+    {
+        $prefix = $this->adminPrefix();
+        require_once $this->app->rootPath() . '/user/plugins/commerce/classes/SubscriptionRegistry.php';
+        $rows = '';
+        foreach ((new SubscriptionRegistry($this->app->rootPath() . '/user/plugins/commerce/data/subscriptions'))->all() as $sub) {
+            $id = htmlspecialchars($sub['id'] ?? '');
+            $status = htmlspecialchars($sub['status'] ?? '');
+            $email = htmlspecialchars($sub['email'] ?? '—');
+            $inv = htmlspecialchars($sub['last_invoice_status'] ?? '—');
+            $rows .= "<tr><td><code>{$id}</code></td><td>{$status}</td><td>{$email}</td><td>{$inv}</td></tr>";
+        }
+        if ($rows === '') {
+            $rows = '<tr><td colspan="4" class="empty">No subscriptions filed yet (Stripe webhooks)</td></tr>';
+        }
+
+        return <<<HTML
+<h1>🛒 Subscriptions</h1>
+<p><a class="btn" href="{$prefix}/commerce/products">← Products</a></p>
+<table class="admin-table"><thead><tr><th>Stripe ID</th><th>Status</th><th>Email</th><th>Last invoice</th></tr></thead><tbody>{$rows}</tbody></table>
+HTML;
     }
 
     public function coupons(): CouponRegistry

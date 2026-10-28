@@ -762,6 +762,56 @@ class MCPServer
             return "Coupon '{$code}' saved.";
         });
 
+        $this->registerTool('gspot_list_gift_cards', [
+            'description' => 'List commerce gift cards',
+            'inputSchema' => ['type' => 'object', 'properties' => []],
+        ], function (array $args): string {
+            $dir = $this->app->rootPath() . '/user/plugins/commerce/data/gift_cards';
+            if (!is_dir($dir)) {
+                return 'Error: commerce plugin not installed.';
+            }
+            require_once $this->app->rootPath() . '/user/plugins/commerce/classes/GiftCardRegistry.php';
+            $cards = (new \GSpot\UserPlugins\Commerce\GiftCardRegistry($dir))->all();
+
+            return json_encode($cards, JSON_PRETTY_PRINT);
+        });
+
+        $this->registerTool('gspot_save_gift_card', [
+            'description' => 'Create or update a gift card balance',
+            'inputSchema' => [
+                'type' => 'object',
+                'properties' => [
+                    'code' => ['type' => 'string'],
+                    'balance_cents' => ['type' => 'integer'],
+                    'currency' => ['type' => 'string'],
+                    'active' => ['type' => 'boolean'],
+                ],
+                'required' => ['code', 'balance_cents'],
+            ],
+        ], function (array $args): string {
+            $dir = $this->app->rootPath() . '/user/plugins/commerce/data/gift_cards';
+            if (!is_dir($dir)) {
+                return 'Error: commerce plugin not installed.';
+            }
+            require_once $this->app->rootPath() . '/user/plugins/commerce/classes/GiftCardRegistry.php';
+            $registry = new \GSpot\UserPlugins\Commerce\GiftCardRegistry($dir);
+            $code = $registry->normalizeCode((string) ($args['code'] ?? ''));
+            if ($code === '') {
+                return 'Error: Invalid code.';
+            }
+            try {
+                $registry->save($code, [
+                    'balance_cents' => (int) $args['balance_cents'],
+                    'currency' => $args['currency'] ?? 'aud',
+                    'active' => $args['active'] ?? true,
+                ]);
+            } catch (\InvalidArgumentException $e) {
+                return 'Error: ' . $e->getMessage();
+            }
+
+            return "Gift card '{$code}' saved.";
+        });
+
         $this->registerTool('gspot_list_mud_patterns', [
             'description' => 'List GSpot MUD HTML patterns (requires gspot-mud plugin)',
             'inputSchema' => ['type' => 'object', 'properties' => []],

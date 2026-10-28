@@ -146,6 +146,8 @@ class AdminRouter
             $this->route('GET', '/commerce/coupons/edit', fn($r) => $this->commerceCouponEdit($r));
             $this->route('POST', '/commerce/coupons/save', fn($r) => $this->commerceCouponSave($r));
             $this->route('POST', '/commerce/coupons/delete', fn($r) => $this->commerceCouponDelete($r));
+            $this->route('GET', '/commerce/gift-cards', fn($r) => $this->commerceGiftCardsList($r));
+            $this->route('GET', '/commerce/subscriptions', fn($r) => $this->commerceSubscriptionsList($r));
         }
     }
 
@@ -927,6 +929,20 @@ HTML;
         ]);
 
         return new RedirectResponse($this->prefix . '/commerce/coupons');
+    }
+
+    private function commerceGiftCardsList(Request $request): Response
+    {
+        return new Response($this->render('commerce-admin', [
+            'body' => $this->commerceAdmin()->giftCardsListContent(),
+        ]));
+    }
+
+    private function commerceSubscriptionsList(Request $request): Response
+    {
+        return new Response($this->render('commerce-admin', [
+            'body' => $this->commerceAdmin()->subscriptionsListContent(),
+        ]));
     }
 
     private function commerceCouponDelete(Request $request): Response
