@@ -31,6 +31,14 @@ composer serve
 
 Visit `http://localhost:8080` · admin at `/gspot-admin/` (change default password immediately).
 
+**Packagist:** submit once per [docs/PACKAGIST.md](docs/PACKAGIST.md), then `composer create-project gspot/gspot my-site` works without the VCS flag.
+
+## Highlights (1.0)
+
+- **Commerce** — flat-file products, Stripe Checkout, MCP smoke tool
+- **Commerce Pro** — licensed multivendor, affiliates, B2B, refunds ([docs](user/content/03.docs/10.commerce-pro/page.md))
+- **Vibe Assurance** — `gspot_vibe_check` + content aura ([docs](user/content/03.docs/11.vibe-check/page.md))
+
 ## Directory Structure
 
 ```

@@ -3,14 +3,14 @@
 ## Pre-Launch (October 1–30)
 
 ### Repository
-- [ ] GitHub repo created: `gspot/gspot`
+- [x] GitHub repo: `GSpotCMS/gspot` (public `main`)
 - [x] LICENSE file (MIT)
 - [x] CONTRIBUTING.md
 - [x] CODE_OF_CONDUCT.md
 - [x] .github/ISSUE_TEMPLATE/ configured
 - [x] GitHub Actions CI (PHPUnit + lint)
-- [ ] Packagist registration: `gspot/gspot`
-- [ ] Release tags: v0.1.0-alpha → v0.9.0-rc5 → v1.0.0
+- [ ] Packagist registration: `gspot/gspot` (see `docs/PACKAGIST.md`)
+- [x] Release tags: `v0.3.0` … `v0.10.0` · **v1.0.0** on launch track
 
 ### Documentation
 - [x] Installation guide
@@ -18,7 +18,7 @@
 - [x] Theme development guide
 - [x] Plugin development guide
 - [x] Admin panel docs
-- [x] MCP tools reference
+- [x] MCP tools reference (commerce + Vibe Assurance updated for 1.0)
 - [x] CLI reference
 - [x] API reference
 - [ ] Video walkthroughs (Kersey narrates)
@@ -64,8 +64,8 @@
 
 ## Launch Day (October 31 — Halloween)
 
-- [ ] Tag v1.0.0 release
-- [ ] `composer create-project gspot/gspot` verified working
+- [ ] Tag **v1.0.0** release (code at `Application::VERSION = 1.0.0` when tagged)
+- [ ] `composer create-project gspot/gspot` verified working (Packagist or VCS repo flag)
 - [ ] Promo site live
 - [ ] Docs site live
 - [ ] Discord open

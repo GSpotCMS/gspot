@@ -14,13 +14,23 @@ description: Installing GSpot CMS
 
 ## Quick Start
 
+**From Packagist** (after [package registration](https://github.com/GSpotCMS/gspot/blob/main/docs/PACKAGIST.md)):
+
 ```bash
 composer create-project gspot/gspot my-site
 cd my-site
-php bin/gspot serve
+composer serve
 ```
 
-Visit `http://localhost:8080` and you're live.
+**From GitHub** (works today):
+
+```bash
+composer create-project gspot/gspot my-site --repository='{"type":"vcs","url":"https://github.com/GSpotCMS/gspot"}'
+cd my-site
+composer serve
+```
+
+Visit `http://localhost:8080` · admin at `/gspot-admin/` (change the default password immediately).
 
 ## Manual Installation
 

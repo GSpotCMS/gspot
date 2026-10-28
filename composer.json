@@ -3,6 +3,12 @@
     "description": "GSpot CMS — A flat-file, MCP-native content management system. Find the Spot. Hit it. Ship it.",
     "type": "project",
     "license": "MIT",
+    "homepage": "https://gspotcms.com",
+    "keywords": ["cms", "flat-file", "markdown", "mcp", "blade", "php"],
+    "support": {
+        "issues": "https://github.com/GSpotCMS/gspot/issues",
+        "source": "https://github.com/GSpotCMS/gspot"
+    },
     "minimum-stability": "stable",
     "prefer-stable": true,
     "require": {
