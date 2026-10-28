@@ -14,6 +14,7 @@
 | Check | Home, `/docs/commerce`, edit `user/content/01.home/page.md`, refresh |
 | Admin | `/gspot-admin/` → change password → create/edit one page |
 | Pass | No 500s; cache clear if stale (`php bin/gspot cache:clear` or MCP `gspot_cache_clear`) |
+| Bonus | Admin **MUD Patterns** shows **core / theme / site** layers; edit core pattern → saves under `user/mud-patterns/` only |
 
 ---
 

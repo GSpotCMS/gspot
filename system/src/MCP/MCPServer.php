@@ -943,6 +943,7 @@ class MCPServer
                 'title' => $p['title'] ?? '',
                 'category' => $p['category'] ?? 'general',
                 'description' => $p['description'] ?? '',
+                'source' => $p['source'] ?? 'core',
             ], $registry->all());
 
             return json_encode($list, JSON_PRETTY_PRINT);
@@ -973,7 +974,7 @@ class MCPServer
         });
 
         $this->registerTool('gspot_save_mud_pattern', [
-            'description' => 'Create or update a MUD HTML pattern',
+            'description' => 'Create or update a MUD HTML pattern (writes site override in user/mud-patterns/)',
             'inputSchema' => [
                 'type' => 'object',
                 'properties' => [
@@ -1150,16 +1151,14 @@ class MCPServer
         return new \GSpot\UserPlugins\Commerce\ProductRegistry($pluginDir . '/data/products');
     }
 
-    private function mudPatternRegistry(): ?\GSpot\UserPlugins\GspotMud\MudPatternRegistry
+    private function mudPatternRegistry(): ?\GSpot\UserPlugins\GspotMud\LayeredMudPatternRegistry
     {
-        $pluginDir = $this->app->rootPath() . '/user/plugins/gspot-mud';
-        if (!is_dir($pluginDir)) {
+        $plugin = $this->app->plugins()->getPlugin('gspot-mud');
+        if (!$plugin instanceof \GSpot\UserPlugins\GspotMud\GspotMudPlugin) {
             return null;
         }
 
-        require_once $pluginDir . '/classes/MudPatternRegistry.php';
-
-        return new \GSpot\UserPlugins\GspotMud\MudPatternRegistry($pluginDir . '/data/patterns');
+        return $plugin->layeredRegistry();
     }
 
     private function addDirToZip(\ZipArchive $zip, string $dir, string $prefix, array $exclude = []): void

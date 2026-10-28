@@ -1043,16 +1043,14 @@ HTML;
         return max(0, (int) $raw);
     }
 
-    private function mudPatternRegistry(): ?\GSpot\UserPlugins\GspotMud\MudPatternRegistry
+    private function mudPatternRegistry(): ?\GSpot\UserPlugins\GspotMud\LayeredMudPatternRegistry
     {
-        $pluginDir = $this->app->rootPath() . '/user/plugins/gspot-mud';
-        if (!is_dir($pluginDir)) {
+        $plugin = $this->app->plugins()->getPlugin('gspot-mud');
+        if (!$plugin instanceof \GSpot\UserPlugins\GspotMud\GspotMudPlugin) {
             return null;
         }
 
-        require_once $pluginDir . '/classes/MudPatternRegistry.php';
-
-        return new \GSpot\UserPlugins\GspotMud\MudPatternRegistry($pluginDir . '/data/patterns');
+        return $plugin->layeredRegistry();
     }
 
     private function mudPatternsList(Request $request): Response
@@ -1139,11 +1137,13 @@ HTML;
             $title = htmlspecialchars($p['title'] ?? $slug);
             $cat = htmlspecialchars($p['category'] ?? 'general');
             $desc = htmlspecialchars($p['description'] ?? '');
+            $source = htmlspecialchars($p['source'] ?? 'core');
             $shortcode = htmlspecialchars('[mud-pattern slug="' . ($p['slug'] ?? '') . '"]');
             $rows .= <<<HTML
 <tr>
   <td><strong>{$title}</strong><br><small class="muted">{$desc}</small></td>
   <td><code>{$slug}</code></td>
+  <td><span class="badge">{$source}</span></td>
   <td>{$cat}</td>
   <td><code>{$shortcode}</code></td>
   <td><a class="btn btn-sm" href="{$prefix}/mud/patterns/edit?slug={$slug}">Edit</a></td>
@@ -1157,12 +1157,12 @@ HTML;
 
         return <<<HTML
 <h1>🧱 MUD Patterns</h1>
-<p>WP-style HTML patterns — GravMUD fence CSS, editable in WYSIWYG. Insert with shortcode or WP block comment.</p>
+<p>Layers: <strong>core</strong> (plugin) → <strong>theme</strong> → <strong>site</strong> (<code>user/mud-patterns/</code>). Saves always write site overrides; core stays pristine.</p>
 {$saved}{$deleted}
 <p><a class="btn btn-primary" href="{$prefix}/mud/patterns/new">+ New Pattern</a></p>
 <div class="panel">
   <table class="admin-table">
-    <thead><tr><th>Title</th><th>Slug</th><th>Category</th><th>Shortcode</th><th></th></tr></thead>
+    <thead><tr><th>Title</th><th>Slug</th><th>Layer</th><th>Category</th><th>Shortcode</th><th></th></tr></thead>
     <tbody>{$rows}</tbody>
   </table>
 </div>
@@ -1185,16 +1185,20 @@ HTML;
         $html = htmlspecialchars($pattern['html'] ?? '', ENT_QUOTES);
         $saved = isset($_GET['saved']) ? '<div class="alert alert-success">Pattern saved!</div>' : '';
         $heading = $isNew ? 'New MUD Pattern' : 'Edit Pattern: ' . $title;
+        $source = htmlspecialchars($pattern['source'] ?? ($isNew ? 'site' : 'core'));
+        $layerNote = $isNew
+            ? '<p class="muted">New patterns are saved under <code>user/mud-patterns/</code>.</p>'
+            : '<p class="muted">Resolved layer: <strong>' . $source . '</strong>. Saving writes a <strong>site</strong> override unless this is already site-only.</p>';
         $mudCss = '/plugin-assets/gspot-mud/css/gspot-mud-fences.css';
         $editorCss = '/plugin-assets/gspot-mud/admin/pattern-editor.css';
         $editorJs = '/plugin-assets/gspot-mud/admin/pattern-editor.js';
         $deleteForm = '';
-        if (!$isNew && $slug !== '') {
+        if (!$isNew && $slug !== '' && ($pattern['source'] ?? '') === 'site') {
             $deleteForm = <<<HTML
-<form method="POST" action="{$prefix}/mud/patterns/delete" class="mud-delete-form" onsubmit="return confirm('Delete pattern {$slug}?')">
+<form method="POST" action="{$prefix}/mud/patterns/delete" class="mud-delete-form" onsubmit="return confirm('Delete site override {$slug}? Core/theme pattern may reappear.')">
   {$data['csrf']}
   <input type="hidden" name="slug" value="{$slug}">
-  <button type="submit" class="btn btn-danger">Delete pattern</button>
+  <button type="submit" class="btn btn-danger">Delete site override</button>
 </form>
 HTML;
         }
@@ -1202,6 +1206,7 @@ HTML;
         return <<<HTML
 <h1>🧱 {$heading}</h1>
 {$saved}
+{$layerNote}
 <p class="muted"><a href="/mud-demo" target="_blank" rel="noopener">Open MUD demo page</a> to see patterns on the front end.</p>
 <link href="https://cdn.jsdelivr.net/npm/quill@2.0.2/dist/quill.snow.css" rel="stylesheet">
 <link rel="stylesheet" href="{$editorCss}">

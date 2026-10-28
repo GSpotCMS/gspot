@@ -6,7 +6,7 @@ namespace GSpot\UserPlugins\GspotMud;
 
 class MudPatternRenderer
 {
-    public function __construct(private readonly MudPatternRegistry $registry) {}
+    public function __construct(private readonly LayeredMudPatternRegistry $registry) {}
 
     public function expand(string $html): string
     {

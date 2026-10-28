@@ -9,12 +9,13 @@ use GSpot\Router\Page;
 
 class GspotMudPlugin extends AbstractPlugin
 {
-    private ?MudPatternRegistry $registry = null;
+    private ?LayeredMudPatternRegistry $layeredRegistry = null;
     private ?MudPatternRenderer $renderer = null;
 
     public function onAppBoot(mixed &$app): void
     {
         require_once __DIR__ . '/classes/MudPatternRegistry.php';
+        require_once __DIR__ . '/classes/LayeredMudPatternRegistry.php';
         require_once __DIR__ . '/classes/MudPatternRenderer.php';
 
         $cssFile = __DIR__ . '/assets/css/gspot-mud-fences.css';
@@ -36,20 +37,19 @@ class GspotMudPlugin extends AbstractPlugin
         }
     }
 
-    public function registry(): MudPatternRegistry
+    public function layeredRegistry(): LayeredMudPatternRegistry
     {
-        return $this->registry ??= new MudPatternRegistry($this->patternsDir());
+        return $this->layeredRegistry ??= LayeredMudPatternRegistry::forApp($this->app, __DIR__);
+    }
+
+    /** @deprecated Use layeredRegistry(); kept for internal renderer wiring */
+    public function registry(): LayeredMudPatternRegistry
+    {
+        return $this->layeredRegistry();
     }
 
     public function renderer(): MudPatternRenderer
     {
-        return $this->renderer ??= new MudPatternRenderer($this->registry());
-    }
-
-    public function patternsDir(): string
-    {
-        $rel = $this->config['config']['patterns_path'] ?? 'data/patterns';
-
-        return __DIR__ . '/' . ltrim($rel, '/');
+        return $this->renderer ??= new MudPatternRenderer($this->layeredRegistry());
     }
 }

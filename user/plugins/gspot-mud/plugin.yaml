@@ -1,5 +1,5 @@
 name: gspot-mud
-version: 0.2.0
+version: 0.3.0
 description: GSpot MUD — WP-style HTML patterns, GravMUD fence CSS, pattern editor v2 (visual, source, preview).
 author: FutureVision Labs · Team DC
 enabled: true
@@ -8,5 +8,4 @@ events:
   - onAppBoot
   - onPageRender
 config:
-  patterns_path: data/patterns
   expand_shortcodes: true

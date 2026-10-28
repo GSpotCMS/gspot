@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.0.1 — 2026-10-28
+
+- **MUD pattern layers:** core → theme → site (`user/mud-patterns/`). Admin/MCP saves never mutate core.
+- Starter theme demo patterns: `starter-spotlight`, `starter-minimal-cta`.
+
 ## 1.0.0 — 2026-10-28 (engineering cut; **public launch NYE 2026**)
 
 **Find the Spot. Hit it. Ship it.**
