@@ -1,0 +1,9 @@
+slug: spot-starter
+title: Spot Starter Bundle
+description: Sticker pack plus mug — groundswell starter kit.
+active: true
+items:
+  - slug: spot-sticker
+    qty: 2
+  - slug: team-dc-mug
+    qty: 1

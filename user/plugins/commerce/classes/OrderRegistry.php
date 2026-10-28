@@ -82,6 +82,46 @@ final class OrderRegistry
         return count(glob($this->ordersDir . '/*.yaml') ?: []);
     }
 
+    /** @return array<string, mixed>|null */
+    public function findByPaymentIntent(string $paymentIntentId): ?array
+    {
+        $paymentIntentId = preg_replace('/[^a-zA-Z0-9_]/', '', $paymentIntentId) ?? '';
+        if ($paymentIntentId === '' || !is_dir($this->ordersDir)) {
+            return null;
+        }
+
+        foreach (glob($this->ordersDir . '/*.yaml') ?: [] as $file) {
+            $data = Yaml::parseFile($file);
+            if (!is_array($data)) {
+                continue;
+            }
+            if ((string) ($data['stripe_payment_intent'] ?? '') === $paymentIntentId) {
+                $data['id'] = $data['id'] ?? basename($file, '.yaml');
+
+                return $data;
+            }
+        }
+
+        return null;
+    }
+
+    public function markRefunded(string $orderId, int $amountCents, string $status = 'full'): void
+    {
+        $order = $this->get($orderId);
+        if ($order === null) {
+            return;
+        }
+
+        $order['refund_status'] = $status;
+        $order['refund_amount_cents'] = $amountCents;
+        $order['refunded_at'] = date('c');
+        if ($status === 'full') {
+            $order['status'] = 'refunded';
+        }
+
+        $this->save($orderId, $order);
+    }
+
     private function sanitizeId(string $id): string
     {
         $id = preg_replace('/[^a-zA-Z0-9_-]/', '', $id) ?? '';

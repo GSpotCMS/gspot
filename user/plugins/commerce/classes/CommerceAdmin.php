@@ -41,7 +41,7 @@ final class CommerceAdmin
 HTML;
     }
 
-    public function orderDetailContent(string $orderId): string
+    public function orderDetailContent(string $orderId, string $csrf = ''): string
     {
         $prefix = $this->adminPrefix();
         require_once $this->app->rootPath() . '/user/plugins/commerce/classes/OrderRegistry.php';
@@ -59,6 +59,25 @@ HTML;
         $tax = htmlspecialchars($order['tax_country'] ?? '');
         $taxRow = $tax !== '' ? "<tr><th>Tax region</th><td>{$tax}</td></tr>" : '';
         $billing = htmlspecialchars($order['billing_mode'] ?? 'payment');
+        $refundStatus = htmlspecialchars($order['refund_status'] ?? 'none');
+        $pi = htmlspecialchars($order['stripe_payment_intent'] ?? '');
+        $customerId = (string) ($order['stripe_customer_id'] ?? '');
+        $portalLink = $customerId !== ''
+            ? '<p><a class="btn" href="/commerce/portal?order=' . rawurlencode($orderId) . '" target="_blank" rel="noopener">Stripe Customer Portal</a></p>'
+            : '<p class="empty">No Stripe customer on file (legacy order)</p>';
+
+        $refundForm = '';
+        if ($pi !== '' && ($order['refund_status'] ?? 'none') !== 'full') {
+            $refundForm = <<<HTML
+<h2>Refund</h2>
+<form method="POST" action="{$prefix}/commerce/orders/refund" onsubmit="return confirm('Issue Stripe refund for this order?')">
+  {$csrf}
+  <input type="hidden" name="order_id" value="{$id}">
+  <div class="form-group"><label>Amount (blank = full refund, dollars)</label><input name="amount" placeholder="optional"></div>
+  <button type="submit" class="btn btn-danger">Refund via Stripe</button>
+</form>
+HTML;
+        }
 
         $cartRows = '';
         $cartJson = (string) ($order['cart_snapshot'] ?? '');
@@ -117,7 +136,11 @@ HTML;
   <tr><th>Mode</th><td>{$billing}</td></tr>
   {$couponRow}
   {$taxRow}
+  <tr><th>Refund</th><td>{$refundStatus}</td></tr>
+  <tr><th>Payment intent</th><td><code>{$pi}</code></td></tr>
 </table>
+{$portalLink}
+{$refundForm}
 <h2>Cart snapshot</h2>
 <table class="admin-table"><thead><tr><th>Product</th><th>Slug</th><th>Qty</th></tr></thead><tbody>{$cartRows}</tbody></table>
 <h2>Stripe line items</h2>
@@ -160,6 +183,7 @@ HTML;
    <a class="btn" href="{$prefix}/commerce/coupons">Coupons</a>
    <a class="btn" href="{$prefix}/commerce/gift-cards">Gift cards</a>
    <a class="btn" href="{$prefix}/commerce/subscriptions">Subscriptions</a>
+   <a class="btn" href="{$prefix}/commerce/bundles">Bundles</a>
    <a class="btn" href="/commerce/shop" target="_blank" rel="noopener">View shop</a></p>
 <table class="admin-table">
   <thead><tr><th>Title</th><th>Slug</th><th>Price</th><th>Stock</th><th>Active</th><th></th></tr></thead>
@@ -326,6 +350,34 @@ HTML;
         require_once $this->app->rootPath() . '/user/plugins/commerce/classes/ProductRegistry.php';
 
         return new ProductRegistry($this->app->rootPath() . '/user/plugins/commerce/data/products');
+    }
+
+    public function bundlesListContent(): string
+    {
+        $prefix = $this->adminPrefix();
+        require_once $this->app->rootPath() . '/user/plugins/commerce/classes/BundleRegistry.php';
+        $registry = new BundleRegistry(
+            $this->app->rootPath() . '/user/plugins/commerce/data/bundles',
+            $this->registry(),
+        );
+        $rows = '';
+        foreach ($registry->all(false) as $bundle) {
+            $slug = htmlspecialchars($bundle['slug'] ?? '');
+            $title = htmlspecialchars($bundle['title'] ?? '');
+            $count = count($registry->lineItems($slug));
+            $active = ($bundle['active'] ?? true) ? 'Yes' : 'No';
+            $rows .= "<tr><td>{$title}</td><td><code>{$slug}</code></td><td>{$count}</td><td>{$active}</td></tr>";
+        }
+        if ($rows === '') {
+            $rows = '<tr><td colspan="4" class="empty">No bundles</td></tr>';
+        }
+
+        return <<<HTML
+<h1>🛒 Bundles</h1>
+<p><a class="btn" href="{$prefix}/commerce/products">← Products</a></p>
+<p>YAML under <code>data/bundles/</code> · shortcode <code>[commerce-bundle slug="spot-starter"]</code></p>
+<table class="admin-table"><thead><tr><th>Title</th><th>Slug</th><th>Items</th><th>Active</th></tr></thead><tbody>{$rows}</tbody></table>
+HTML;
     }
 
     public function giftCardsListContent(): string

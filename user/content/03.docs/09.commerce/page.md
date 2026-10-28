@@ -99,8 +99,21 @@ Each product has a `currency` field. Carts with mixed currencies cannot checkout
 
 Webhooks track `customer.subscription.*` and `invoice.paid` / `invoice.payment_failed` into `data/subscriptions/`. View in **Admin → Commerce → Subscriptions**.
 
+## Bundles
+
+YAML bundles in `data/bundles/` (demo `spot-starter`). Shop grid and `[commerce-bundle slug="spot-starter"]`.
+
+## Refunds
+
+**Admin → Orders → View** issues Stripe refunds when `stripe_payment_intent` is on file. Webhook `charge.refunded` syncs status.
+
+## Customer Portal
+
+Link from order detail or `/commerce/portal?order=cs_...` (requires `stripe_customer_id` from checkout).
+
 ## MCP
 
+- `gspot_commerce_checkout_smoke` — dry-run cart validation
 - `gspot_list_products` / `gspot_save_product`
 - `gspot_list_orders`
 - `gspot_list_coupons` / `gspot_save_coupon`

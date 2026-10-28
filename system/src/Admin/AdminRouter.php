@@ -148,6 +148,8 @@ class AdminRouter
             $this->route('POST', '/commerce/coupons/delete', fn($r) => $this->commerceCouponDelete($r));
             $this->route('GET', '/commerce/gift-cards', fn($r) => $this->commerceGiftCardsList($r));
             $this->route('GET', '/commerce/subscriptions', fn($r) => $this->commerceSubscriptionsList($r));
+            $this->route('GET', '/commerce/bundles', fn($r) => $this->commerceBundlesList($r));
+            $this->route('POST', '/commerce/orders/refund', fn($r) => $this->commerceOrderRefund($r));
         }
     }
 
@@ -879,8 +881,45 @@ HTML;
         $id = (string) $request->query->get('id', '');
 
         return new Response($this->render('commerce-admin', [
-            'body' => $this->commerceAdmin()->orderDetailContent($id),
+            'body' => $this->commerceAdmin()->orderDetailContent($id, Csrf::field()),
         ]));
+    }
+
+    private function commerceOrderRefund(Request $request): Response
+    {
+        require_once $this->app->rootPath() . '/user/plugins/commerce/classes/OrderRegistry.php';
+        require_once $this->app->rootPath() . '/user/plugins/commerce/classes/StripeRefundService.php';
+
+        $orderId = (string) $request->request->get('order_id', '');
+        $orders = new \GSpot\UserPlugins\Commerce\OrderRegistry(
+            $this->app->rootPath() . '/user/plugins/commerce/data/orders',
+        );
+        $order = $orders->get($orderId);
+        if ($order === null) {
+            return new Response('Order not found', 404);
+        }
+
+        $pi = (string) ($order['stripe_payment_intent'] ?? '');
+        if ($pi === '') {
+            return new Response('No payment intent on order', 400);
+        }
+
+        $secret = trim((string) (getenv('STRIPE_SECRET_KEY') ?: ($_ENV['STRIPE_SECRET_KEY'] ?? '')));
+        $refunds = new \GSpot\UserPlugins\Commerce\StripeRefundService($secret);
+
+        $amountRaw = trim((string) $request->request->get('amount', ''));
+        $amountCents = $amountRaw === '' ? null : (int) round((float) $amountRaw * 100);
+
+        try {
+            $refund = $refunds->refundPaymentIntent($pi, $amountCents);
+            $refunded = (int) ($refund->amount ?? 0);
+            $total = (int) ($order['amount_total'] ?? 0);
+            $orders->markRefunded($orderId, $refunded, $refunded >= $total && $total > 0 ? 'full' : 'partial');
+        } catch (\Throwable $e) {
+            return new Response('Refund failed: ' . $e->getMessage(), 502);
+        }
+
+        return new RedirectResponse($this->prefix . '/commerce/orders/view?id=' . rawurlencode($orderId));
     }
 
     private function commerceCouponsList(Request $request): Response
@@ -942,6 +981,13 @@ HTML;
     {
         return new Response($this->render('commerce-admin', [
             'body' => $this->commerceAdmin()->subscriptionsListContent(),
+        ]));
+    }
+
+    private function commerceBundlesList(Request $request): Response
+    {
+        return new Response($this->render('commerce-admin', [
+            'body' => $this->commerceAdmin()->bundlesListContent(),
         ]));
     }
 

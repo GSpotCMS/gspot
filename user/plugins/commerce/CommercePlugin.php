@@ -36,6 +36,11 @@ class CommercePlugin extends AbstractPlugin
         require_once __DIR__ . '/classes/AbandonedCartReminder.php';
         require_once __DIR__ . '/classes/GiftCardRegistry.php';
         require_once __DIR__ . '/classes/SubscriptionRegistry.php';
+        require_once __DIR__ . '/classes/BundleRegistry.php';
+        require_once __DIR__ . '/classes/StripeRefundService.php';
+        require_once __DIR__ . '/classes/StripeCustomerPortal.php';
+        require_once __DIR__ . '/classes/CheckoutSmokeTest.php';
+        require_once __DIR__ . '/classes/CommerceCheckoutAnalyzer.php';
 
         $this->app->renderer()->addViewPath(__DIR__ . '/views');
         $this->app->renderer()->share('commerceCss', '/plugin-assets/commerce/css/shop.css');
@@ -75,6 +80,28 @@ HTML;
             }
         }
 
+        if (preg_match_all('/\[commerce-bundle\s+slug="([a-z0-9-]+)"\]/', $content, $bundleMatches, PREG_SET_ORDER)) {
+            foreach ($bundleMatches as $match) {
+                $bundle = $this->bundles()->get($match[1]);
+                if ($bundle === null) {
+                    continue;
+                }
+                $title = htmlspecialchars($bundle['title'] ?? $match[1]);
+                $desc = htmlspecialchars($bundle['description'] ?? '');
+                $slug = htmlspecialchars($bundle['slug'] ?? $match[1]);
+                $embed = <<<HTML
+<div class="commerce-embed-card">
+  <strong>{$title}</strong> — bundle<br>{$desc}
+  <form method="POST" action="/commerce/cart/add-bundle" style="margin-top:0.5rem">
+    <input type="hidden" name="slug" value="{$slug}">
+    <button type="submit">Add bundle to cart</button>
+  </form>
+</div>
+HTML;
+                $content = str_replace($match[0], $embed, $content);
+            }
+        }
+
         $page->setContent($content);
     }
 
@@ -87,6 +114,8 @@ HTML;
             $path === '/commerce/cart' => $this->cartPage($request),
             $path === '/commerce/checkout' && $request->isMethod('POST') => $this->checkout($request),
             $path === '/commerce/cart/add' && $request->isMethod('POST') => $this->cartAdd($request),
+            $path === '/commerce/cart/add-bundle' && $request->isMethod('POST') => $this->cartAddBundle($request),
+            $path === '/commerce/portal' => $this->customerPortal($request),
             $path === '/commerce/cart/update' && $request->isMethod('POST') => $this->cartUpdate($request),
             $path === '/commerce/cart/coupon' && $request->isMethod('POST') => $this->cartCoupon($request),
             $path === '/commerce/cart/coupon/remove' && $request->isMethod('POST') => $this->cartCouponRemove($request),
@@ -132,6 +161,7 @@ HTML;
     {
         return new Response($this->renderView('shop', [
             'products' => $this->registry()->all(),
+            'bundles' => $this->bundles()->all(),
             'site' => $this->siteData(),
         ]));
     }
@@ -165,6 +195,39 @@ HTML;
         $redirect = $request->request->get('redirect', '/commerce/cart');
 
         return new RedirectResponse((string) $redirect);
+    }
+
+    private function cartAddBundle(Request $request): Response
+    {
+        $slug = (string) $request->request->get('slug', '');
+        foreach ($this->bundles()->lineItems($slug) as $row) {
+            $this->cart()->add($row['slug'], $row['qty']);
+        }
+
+        return new RedirectResponse('/commerce/cart');
+    }
+
+    private function customerPortal(Request $request): Response
+    {
+        $orderId = (string) $request->query->get('order', '');
+        $order = $orderId !== '' ? $this->orders()->get($orderId) : null;
+        $customerId = (string) ($order['stripe_customer_id'] ?? '');
+        if ($customerId === '') {
+            return new Response('Customer portal unavailable for this order.', 404);
+        }
+
+        try {
+            $base = rtrim((string) $this->app->config()->get('site.url', 'http://localhost:8080'), '/');
+            $portal = new StripeCustomerPortal(
+                $this->stripeSecret(),
+                $base . '/commerce/shop',
+            );
+            $session = $portal->createSession($customerId);
+
+            return new RedirectResponse((string) ($session->url ?? '/commerce/shop'));
+        } catch (\Throwable $e) {
+            return new Response($e->getMessage(), 502);
+        }
     }
 
     private function cartUpdate(Request $request): Response
@@ -430,6 +493,13 @@ HTML;
         $rel = (string) ($this->config['config']['subscriptions_path'] ?? 'data/subscriptions');
 
         return new SubscriptionRegistry(__DIR__ . '/' . ltrim($rel, '/'));
+    }
+
+    private function bundles(): BundleRegistry
+    {
+        $rel = (string) ($this->config['config']['bundles_path'] ?? 'data/bundles');
+
+        return new BundleRegistry(__DIR__ . '/' . ltrim($rel, '/'), $this->registry());
     }
 
     private function downloadGrants(): DownloadGrantRegistry

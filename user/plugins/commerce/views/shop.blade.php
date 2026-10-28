@@ -17,6 +17,23 @@
 <main class="commerce-main">
     <h1>Shop</h1>
     <p class="commerce-lead">Flat-file products. Stripe Checkout. No database drama.</p>
+    @if(!empty($bundles))
+        <h2>Bundles</h2>
+        <div class="commerce-grid commerce-bundles">
+            @foreach($bundles as $bundle)
+                @php $bslug = $bundle['slug'] ?? ''; @endphp
+                <article class="commerce-card">
+                    <h2>{{ $bundle['title'] ?? $bslug }}</h2>
+                    <p>{{ $bundle['description'] ?? '' }}</p>
+                    <form method="POST" action="/commerce/cart/add-bundle">
+                        <input type="hidden" name="slug" value="{{ $bslug }}">
+                        <button type="submit">Add bundle to cart</button>
+                    </form>
+                </article>
+            @endforeach
+        </div>
+    @endif
+    <h2>Products</h2>
     <div class="commerce-grid">
         @foreach($products as $product)
             @php

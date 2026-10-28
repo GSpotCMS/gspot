@@ -41,6 +41,7 @@ final class StripeWebhook
             'checkout.session.completed' => $this->recordCheckoutSession($event),
             'customer.subscription.updated', 'customer.subscription.deleted' => $this->recordSubscriptionLifecycle($event),
             'invoice.paid', 'invoice.payment_failed' => $this->recordInvoiceLifecycle($event),
+            'charge.refunded' => $this->recordChargeRefunded($event),
             default => null,
         };
     }
@@ -87,6 +88,9 @@ final class StripeWebhook
             'tax_country' => $taxCountry,
             'cart_snapshot' => $cartJson,
             'billing_mode' => (string) ($session->mode ?? 'payment'),
+            'stripe_payment_intent' => (string) ($session->payment_intent ?? ''),
+            'stripe_customer_id' => (string) ($session->customer ?? ''),
+            'refund_status' => 'none',
             'created' => date('c', (int) ($session->created ?? time())),
         ];
 
@@ -163,6 +167,25 @@ final class StripeWebhook
             'last_invoice_status' => $invoiceStatus,
             'email' => (string) ($invoice->customer_email ?? ''),
         ]);
+    }
+
+    private function recordChargeRefunded(Event $event): void
+    {
+        $charge = $event->data->object;
+        $paymentIntent = (string) ($charge->payment_intent ?? '');
+        if ($paymentIntent === '') {
+            return;
+        }
+
+        $order = $this->orders->findByPaymentIntent($paymentIntent);
+        if ($order === null) {
+            return;
+        }
+
+        $refunded = (int) ($charge->amount_refunded ?? 0);
+        $total = (int) ($order['amount_total'] ?? 0);
+        $status = $refunded >= $total && $total > 0 ? 'full' : 'partial';
+        $this->orders->markRefunded((string) ($order['id'] ?? ''), $refunded, $status);
     }
 
     private function fulfillInventory(string $cartJson): void

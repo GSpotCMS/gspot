@@ -812,6 +812,53 @@ class MCPServer
             return "Gift card '{$code}' saved.";
         });
 
+        $this->registerTool('gspot_commerce_checkout_smoke', [
+            'description' => 'Dry-run checkout validation for commerce (products, currency, Stripe config)',
+            'inputSchema' => [
+                'type' => 'object',
+                'properties' => [
+                    'items' => [
+                        'type' => 'array',
+                        'items' => [
+                            'type' => 'object',
+                            'properties' => [
+                                'slug' => ['type' => 'string'],
+                                'qty' => ['type' => 'integer'],
+                            ],
+                        ],
+                        'description' => 'Optional cart lines to validate',
+                    ],
+                ],
+            ],
+        ], function (array $args): string {
+            $pluginDir = $this->app->rootPath() . '/user/plugins/commerce';
+            if (!is_dir($pluginDir)) {
+                return 'Error: commerce plugin not installed.';
+            }
+            require_once $pluginDir . '/classes/ProductRegistry.php';
+            require_once $pluginDir . '/classes/CommerceCheckoutAnalyzer.php';
+            $registry = new \GSpot\UserPlugins\Commerce\ProductRegistry($pluginDir . '/data/products');
+            $secret = trim((string) (getenv('STRIPE_SECRET_KEY') ?: ($_ENV['STRIPE_SECRET_KEY'] ?? '')));
+            $analyzer = new \GSpot\UserPlugins\Commerce\CommerceCheckoutAnalyzer($registry, $secret !== '');
+
+            $rows = [];
+            foreach ($args['items'] ?? [] as $row) {
+                if (!is_array($row)) {
+                    continue;
+                }
+                $rows[] = [
+                    'slug' => (string) ($row['slug'] ?? ''),
+                    'qty' => (int) ($row['qty'] ?? 1),
+                ];
+            }
+
+            if ($rows === []) {
+                $rows = [['slug' => 'team-dc-mug', 'qty' => 1]];
+            }
+
+            return json_encode($analyzer->analyze($rows), JSON_PRETTY_PRINT);
+        });
+
         $this->registerTool('gspot_list_mud_patterns', [
             'description' => 'List GSpot MUD HTML patterns (requires gspot-mud plugin)',
             'inputSchema' => ['type' => 'object', 'properties' => []],
