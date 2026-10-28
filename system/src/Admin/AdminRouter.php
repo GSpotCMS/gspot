@@ -864,13 +864,26 @@ HTML;
         $saved = isset($_GET['saved']) ? '<div class="alert alert-success">Pattern saved!</div>' : '';
         $heading = $isNew ? 'New MUD Pattern' : 'Edit Pattern: ' . $title;
         $mudCss = '/plugin-assets/gspot-mud/css/gspot-mud-fences.css';
+        $editorCss = '/plugin-assets/gspot-mud/admin/pattern-editor.css';
+        $editorJs = '/plugin-assets/gspot-mud/admin/pattern-editor.js';
+        $deleteForm = '';
+        if (!$isNew && $slug !== '') {
+            $deleteForm = <<<HTML
+<form method="POST" action="{$prefix}/mud/patterns/delete" class="mud-delete-form" onsubmit="return confirm('Delete pattern {$slug}?')">
+  {$data['csrf']}
+  <input type="hidden" name="slug" value="{$slug}">
+  <button type="submit" class="btn btn-danger">Delete pattern</button>
+</form>
+HTML;
+        }
 
         return <<<HTML
 <h1>🧱 {$heading}</h1>
 {$saved}
+<p class="muted"><a href="/mud-demo" target="_blank" rel="noopener">Open MUD demo page</a> to see patterns on the front end.</p>
 <link href="https://cdn.jsdelivr.net/npm/quill@2.0.2/dist/quill.snow.css" rel="stylesheet">
-<link rel="stylesheet" href="{$mudCss}">
-<form method="POST" action="{$prefix}/mud/patterns/save" id="mud-pattern-form">
+<link rel="stylesheet" href="{$editorCss}">
+<form method="POST" action="{$prefix}/mud/patterns/save" id="mud-pattern-form" data-mud-css="{$mudCss}">
   {$data['csrf']}
   <div class="panel">
     <div class="form-group"><label>Slug (url-safe id)</label><input type="text" name="slug" value="{$slug}" required pattern="[a-z0-9-]+" {$this->readonlyIf(!$isNew && $slug !== '')}></div>
@@ -879,42 +892,45 @@ HTML;
     <div class="form-group"><label>Description</label><input type="text" name="description" value="{$desc}"></div>
   </div>
   <div class="panel">
-    <h2>HTML Pattern (WYSIWYG)</h2>
-    <div id="mud-quill-editor" class="mud-quill-wrap"></div>
+    <h2>Pattern body</h2>
+    <div class="mud-editor-snippet-bar">
+      <select id="mud-snippet-select">
+        <option value="">Insert snippet…</option>
+        <option value="hero-split">Hero (split)</option>
+        <option value="hero-fullscreen">Hero (fullscreen)</option>
+        <option value="cards-three">Cards (×3)</option>
+        <option value="callout">Callout band</option>
+        <option value="mud-callout-info">Info callout</option>
+        <option value="quote">Quote block</option>
+        <option value="manifesto">Manifesto</option>
+        <option value="pricing-card">Pricing grid</option>
+      </select>
+      <button type="button" class="btn btn-sm" id="mud-snippet-insert">Insert</button>
+    </div>
+    <div class="mud-editor-tabs">
+      <button type="button" class="is-active" data-mud-tab="visual">Visual</button>
+      <button type="button" data-mud-tab="source">HTML source</button>
+      <button type="button" data-mud-tab="preview">Live preview</button>
+    </div>
+    <div class="mud-editor-pane is-active" data-mud-pane="visual">
+      <div id="mud-quill-editor" class="mud-quill-wrap"></div>
+    </div>
+    <div class="mud-editor-pane" data-mud-pane="source">
+      <textarea id="mud-html-source-editor" class="mud-source-editor" spellcheck="false"></textarea>
+    </div>
+    <div class="mud-editor-pane" data-mud-pane="preview">
+      <iframe id="mud-preview-frame" class="mud-preview-frame" title="Pattern preview"></iframe>
+    </div>
     <textarea name="html" id="mud-html-source" style="display:none">{$html}</textarea>
   </div>
-  <button type="submit" class="btn btn-primary">Save Pattern</button>
-  <a class="btn" href="{$prefix}/mud/patterns">Back</a>
+  <div class="mud-editor-actions">
+    <button type="submit" class="btn btn-primary">Save pattern</button>
+    <a class="btn" href="{$prefix}/mud/patterns">Back to library</a>
+  </div>
 </form>
+{$deleteForm}
 <script src="https://cdn.jsdelivr.net/npm/quill@2.0.2/dist/quill.js"></script>
-<script>
-(function() {
-  const source = document.getElementById('mud-html-source');
-  const quill = new Quill('#mud-quill-editor', {
-    theme: 'snow',
-    modules: {
-      toolbar: [
-        [{ header: [1, 2, 3, false] }],
-        ['bold', 'italic', 'underline', 'link'],
-        [{ list: 'ordered' }, { list: 'bullet' }],
-        ['blockquote', 'code-block'],
-        ['clean']
-      ]
-    }
-  });
-  if (source.value) {
-    quill.clipboard.dangerouslyPasteHTML(source.value);
-  }
-  document.getElementById('mud-pattern-form').addEventListener('submit', function() {
-    source.value = quill.getSemanticHTML ? quill.getSemanticHTML() : quill.root.innerHTML;
-  });
-})();
-</script>
-<style>
-.mud-quill-wrap { background: #fff; color: #111; border-radius: 8px; min-height: 320px; }
-.mud-quill-wrap .ql-editor { min-height: 280px; font-family: inherit; }
-.mud-quill-wrap .hero, .mud-quill-wrap .cards, .mud-quill-wrap .callout, .mud-quill-wrap .pricing { margin: 0; }
-</style>
+<script src="{$editorJs}"></script>
 HTML;
     }
 

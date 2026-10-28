@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace GSpot\UserPlugins\GspotMud;
 
+use GSpot\Security\PathGuard;
 use Symfony\Component\Yaml\Yaml;
 
 class MudPatternRegistry
@@ -33,8 +34,12 @@ class MudPatternRegistry
     /** @return array<string, mixed>|null */
     public function get(string $slug): ?array
     {
-        $dir = $this->patternsDir . '/' . $slug;
-        if (!is_dir($dir)) {
+        $slug = PathGuard::sanitizeSlug($slug);
+        if ($slug === '') {
+            return null;
+        }
+        $dir = PathGuard::resolveUnder($this->patternsDir, $slug);
+        if ($dir === null || !is_dir($dir)) {
             return null;
         }
 
@@ -51,12 +56,15 @@ class MudPatternRegistry
     /** @param array<string, mixed> $meta */
     public function save(string $slug, array $meta, string $html): void
     {
-        $slug = preg_replace('/[^a-z0-9-]/', '', strtolower($slug)) ?? '';
+        $slug = PathGuard::sanitizeSlug($slug);
         if ($slug === '') {
             throw new \InvalidArgumentException('Invalid pattern slug');
         }
 
-        $dir = $this->patternsDir . '/' . $slug;
+        $dir = PathGuard::resolveUnder($this->patternsDir, $slug);
+        if ($dir === null) {
+            throw new \InvalidArgumentException('Invalid pattern path');
+        }
         if (!is_dir($dir)) {
             mkdir($dir, 0755, true);
         }
@@ -75,8 +83,12 @@ class MudPatternRegistry
 
     public function delete(string $slug): bool
     {
-        $dir = $this->patternsDir . '/' . preg_replace('/[^a-z0-9-]/', '', strtolower($slug));
-        if (!is_dir($dir)) {
+        $slug = PathGuard::sanitizeSlug($slug);
+        if ($slug === '') {
+            return false;
+        }
+        $dir = PathGuard::resolveUnder($this->patternsDir, $slug);
+        if ($dir === null || !is_dir($dir)) {
             return false;
         }
 
