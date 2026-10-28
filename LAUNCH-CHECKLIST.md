@@ -66,6 +66,8 @@
 
 ## Pre-NYE testing window (Oct–Dec 2026)
 
+**Five-scenario beta sheet:** [`docs/NYE-BETA-FOCUS.md`](NYE-BETA-FOCUS.md)
+
 - [ ] Dogfood on a real site (commerce + webhooks + MCP daily driver)
 - [ ] Fix bugs from testing; tag `v1.0.x` patches as needed
 - [ ] Packagist live + `composer create-project` verified
