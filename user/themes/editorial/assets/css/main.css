@@ -1,0 +1,243 @@
+:root {
+    --primary: #1a1a1a;
+    --secondary: #c41e3a;
+    --accent: #2563eb;
+    --bg: #faf8f5;
+    --surface: #ffffff;
+    --text: #1a1a1a;
+    --muted: #5c5c5c;
+    --font-body: 'Georgia', 'Times New Roman', serif;
+    --font-display: 'Georgia', 'Times New Roman', serif;
+    --font-sans: 'Segoe UI', system-ui, sans-serif;
+    --max: 42rem;
+    --rule: 1px solid color-mix(in srgb, var(--text) 12%, transparent);
+}
+
+*, *::before, *::after {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html {
+    font-size: 18px;
+    scroll-behavior: smooth;
+}
+
+body.theme-editorial {
+    font-family: var(--font-body);
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.75;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+a {
+    color: var(--accent);
+    text-decoration: underline;
+    text-underline-offset: 0.15em;
+}
+
+a:hover {
+    color: var(--secondary);
+}
+
+.site-header {
+    border-bottom: var(--rule);
+    padding: 1.25rem 1.5rem;
+}
+
+.site-header-inner {
+    max-width: 72rem;
+    margin: 0 auto;
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.site-brand {
+    font-family: var(--font-sans);
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--text);
+    text-decoration: none;
+}
+
+.site-tagline {
+    font-family: var(--font-sans);
+    font-size: 0.7rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+}
+
+.site-content {
+    flex: 1;
+    max-width: var(--max);
+    margin: 0 auto;
+    padding: 2.5rem 1.5rem 4rem;
+    width: 100%;
+}
+
+.page-masthead {
+    margin-bottom: 2rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 3px double color-mix(in srgb, var(--text) 25%, transparent);
+}
+
+.page-masthead--compact {
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+}
+
+.page-kicker {
+    font-family: var(--font-sans);
+    font-size: 0.65rem;
+    font-weight: 600;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--secondary);
+    margin-bottom: 0.75rem;
+}
+
+.page--editorial h1,
+.pattern-content > .page-masthead h1 {
+    font-size: clamp(2rem, 5vw, 2.75rem);
+    font-weight: 400;
+    line-height: 1.15;
+    font-style: italic;
+}
+
+.page h2 {
+    font-family: var(--font-sans);
+    font-size: 0.85rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-top: 2.5rem;
+    margin-bottom: 0.75rem;
+    color: var(--primary);
+}
+
+.page p {
+    margin-bottom: 1.25rem;
+    color: var(--text);
+}
+
+.page p:first-of-type::first-letter {
+    float: left;
+    font-size: 3.4rem;
+    line-height: 0.85;
+    padding-right: 0.12em;
+    margin-top: 0.08em;
+    font-weight: 400;
+    color: var(--secondary);
+}
+
+.page strong {
+    font-weight: 700;
+}
+
+.page em {
+    font-style: italic;
+}
+
+.page ul, .page ol {
+    margin-bottom: 1.25rem;
+    padding-left: 1.25rem;
+}
+
+.page li {
+    margin-bottom: 0.35rem;
+}
+
+.page code {
+    font-family: ui-monospace, monospace;
+    font-size: 0.82em;
+    background: var(--surface);
+    border: var(--rule);
+    padding: 0.1rem 0.35rem;
+}
+
+.site-footer {
+    border-top: var(--rule);
+    padding: 1.5rem;
+    text-align: center;
+    font-family: var(--font-sans);
+    font-size: 0.75rem;
+    color: var(--muted);
+}
+
+.site-footer a {
+    text-decoration: none;
+}
+
+/* Pattern fence bridge */
+.pattern-page.pattern-page--gspot {
+    --bg: var(--bg);
+    --bg-card: var(--surface);
+    --text: var(--text);
+    --muted: var(--muted);
+    --accent: var(--accent);
+    --accent-glow: color-mix(in srgb, var(--secondary) 55%, var(--accent));
+    --gold: var(--secondary);
+    --teal: var(--accent);
+    --grav-navy: var(--primary);
+    --border: color-mix(in srgb, var(--text) 14%, var(--surface));
+    --radius: 0.15rem;
+    --shadow: 0 4px 24px color-mix(in srgb, var(--text) 8%, transparent);
+    --font-sans: var(--font-sans);
+    --font-display: var(--font-body);
+    --max: 48rem;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-body);
+    line-height: 1.7;
+}
+
+.pattern-page--gspot .pattern-content > h1 {
+    font-style: italic;
+    font-weight: 400;
+    background: none;
+    -webkit-text-fill-color: var(--text);
+    color: var(--text);
+}
+
+.site-content:has(.pattern-page--gspot) {
+    max-width: var(--max, 48rem);
+}
+
+.pattern-page--gspot .btn.primary {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: var(--surface);
+    border-radius: 0;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-family: var(--font-sans);
+    font-size: 0.75rem;
+}
+
+.pattern-page--gspot .hero-mark {
+    background: var(--secondary);
+}
+
+.pattern-page--gspot .manifesto {
+    border-left: 4px solid var(--secondary);
+    background: var(--surface);
+}
+
+body.gspot-energy-high .site-header {
+    border-bottom-width: 3px;
+    border-bottom-color: var(--secondary);
+}
+
+body.gspot-vibe-synthwave {
+    --accent: #7c3aed;
+    --secondary: #ff2bd6;
+}

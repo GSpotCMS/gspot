@@ -1,0 +1,28 @@
+name: editorial
+version: 1.0.0
+description: Magazine editorial — serif type, columns, long-read rhythm
+author: FutureVision Labs
+
+presets:
+  default:
+    primary: "#1a1a1a"
+    secondary: "#c41e3a"
+    accent: "#2563eb"
+    background: "#faf8f5"
+    surface: "#ffffff"
+    text: "#1a1a1a"
+    muted: "#5c5c5c"
+
+vibes:
+  feature:
+    extends: default
+    secondary: "#b8860b"
+    accent: "#1d4ed8"
+  breaking:
+    primary: "#0f0f0f"
+    secondary: "#dc2626"
+    accent: "#dc2626"
+    background: "#fff5f5"
+    surface: "#ffffff"
+    text: "#0f0f0f"
+    muted: "#737373"

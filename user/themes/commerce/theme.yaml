@@ -1,0 +1,32 @@
+name: commerce
+version: 1.0.0
+description: Storefront — wide grid, product-forward chrome, checkout-ready spacing
+author: FutureVision Labs
+
+presets:
+  default:
+    primary: "#0f766e"
+    secondary: "#f59e0b"
+    accent: "#0ea5e9"
+    background: "#f4f6f8"
+    surface: "#ffffff"
+    text: "#0f172a"
+    muted: "#64748b"
+
+vibes:
+  boutique:
+    primary: "#9f1239"
+    secondary: "#d97706"
+    accent: "#be185d"
+    background: "#fffbf7"
+    surface: "#ffffff"
+    text: "#292524"
+    muted: "#78716c"
+  dark_sale:
+    primary: "#22c55e"
+    secondary: "#eab308"
+    accent: "#38bdf8"
+    background: "#0c1222"
+    surface: "#151c2f"
+    text: "#f1f5f9"
+    muted: "#94a3b8"

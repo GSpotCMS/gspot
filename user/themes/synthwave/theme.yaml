@@ -1,0 +1,28 @@
+name: synthwave
+version: 1.0.0
+description: Neon synthwave — grid horizons, chrome type, night-drive energy
+author: FutureVision Labs
+
+presets:
+  default:
+    primary: "#7c3aed"
+    secondary: "#ff2bd6"
+    accent: "#22d3ee"
+    background: "#0a0014"
+    surface: "#140828"
+    text: "#f5e6ff"
+    muted: "#a78bb8"
+
+vibes:
+  midnight:
+    extends: default
+    background: "#020008"
+    surface: "#0c0618"
+  sunset_strip:
+    primary: "#f97316"
+    secondary: "#fb7185"
+    accent: "#fde047"
+    background: "#1a0a2e"
+    surface: "#2d1450"
+    text: "#fff7ed"
+    muted: "#c4a8d8

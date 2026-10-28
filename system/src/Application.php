@@ -16,7 +16,7 @@ use Illuminate\Container\Container;
 
 class Application
 {
-    public const VERSION = '1.0.3';
+    public const VERSION = '1.1.0';
 
     private static ?self $instance = null;
 

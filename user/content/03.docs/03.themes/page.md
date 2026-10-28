@@ -8,6 +8,17 @@ description: Theming and vibe system in GSpot CMS
 
 GSpot CMS has a powerful theming system with vibe presets that let you swap your entire site aesthetic instantly.
 
+## Bundled starter themes
+
+| Theme | Vibe | Best for |
+|-------|------|----------|
+| **starter** | Purple synth default + minimal / cyber_noir vibes | Docs, demos, pattern bridge reference |
+| **editorial** | Serif magazine, feature / breaking vibes | Long reads, blogs, magazines |
+| **synthwave** | Neon grid + midnight / sunset_strip | Landing pages, music, night-drive energy |
+| **commerce** | Storefront chrome + boutique / dark_sale | Shop pages with the commerce plugin |
+
+Each theme ships **two theme-layer patterns** under `user/themes/{name}/patterns/`. Activate in **Admin → Themes**; core pattern fences stay the same, tokens and layout chrome change.
+
 ## Theme Structure
 
 ```

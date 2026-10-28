@@ -1,0 +1,244 @@
+:root {
+    --primary: #0f766e;
+    --secondary: #f59e0b;
+    --accent: #0ea5e9;
+    --bg: #f4f6f8;
+    --surface: #ffffff;
+    --text: #0f172a;
+    --muted: #64748b;
+    --font-body: 'Segoe UI', system-ui, sans-serif;
+    --font-display: 'Segoe UI', system-ui, sans-serif;
+    --max: 72rem;
+    --radius: 0.5rem;
+}
+
+*, *::before, *::after {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html {
+    font-size: 16px;
+    scroll-behavior: smooth;
+}
+
+body.theme-commerce {
+    font-family: var(--font-body);
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+a {
+    color: var(--primary);
+    text-decoration: none;
+    font-weight: 500;
+}
+
+a:hover {
+    color: var(--accent);
+}
+
+.site-header {
+    background: var(--surface);
+    border-bottom: 1px solid color-mix(in srgb, var(--text) 8%, transparent);
+    padding: 0.85rem 1.5rem;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    box-shadow: 0 1px 0 color-mix(in srgb, var(--text) 4%, transparent);
+}
+
+.site-header-inner {
+    max-width: var(--max);
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.5rem;
+}
+
+.site-brand {
+    font-weight: 800;
+    font-size: 1.05rem;
+    color: var(--text);
+    letter-spacing: -0.02em;
+}
+
+.site-nav {
+    display: flex;
+    gap: 1.25rem;
+    font-size: 0.9rem;
+}
+
+.site-nav a {
+    color: var(--muted);
+}
+
+.site-nav a:hover {
+    color: var(--primary);
+}
+
+.site-content {
+    flex: 1;
+    max-width: var(--max);
+    margin: 0 auto;
+    padding: 2rem 1.5rem 3rem;
+    width: 100%;
+}
+
+.page--commerce h1 {
+    font-size: clamp(1.75rem, 4vw, 2.25rem);
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    margin-bottom: 1rem;
+}
+
+.page h2 {
+    font-size: 1.25rem;
+    font-weight: 700;
+    margin-top: 2rem;
+    margin-bottom: 0.75rem;
+}
+
+.page p {
+    margin-bottom: 1rem;
+    color: var(--muted);
+    max-width: 65ch;
+}
+
+.page strong {
+    color: var(--text);
+}
+
+.page code {
+    background: color-mix(in srgb, var(--accent) 8%, var(--surface));
+    border-radius: 4px;
+    padding: 0.12rem 0.35rem;
+    font-size: 0.875rem;
+    color: var(--primary);
+}
+
+.site-footer {
+    background: var(--surface);
+    border-top: 1px solid color-mix(in srgb, var(--text) 8%, transparent);
+    padding: 2rem 1.5rem;
+}
+
+.site-footer-inner {
+    max-width: var(--max);
+    margin: 0 auto;
+    text-align: center;
+    font-size: 0.875rem;
+    color: var(--muted);
+}
+
+.site-footer-note {
+    margin-top: 0.35rem;
+    font-size: 0.8rem;
+}
+
+/* Storefront pattern helpers */
+.product-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 1rem;
+    margin: 1.5rem 0;
+}
+
+.product-card {
+    background: var(--surface);
+    border: 1px solid color-mix(in srgb, var(--text) 8%, transparent);
+    border-radius: var(--radius);
+    padding: 1rem;
+    transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.product-card.is-hovered,
+.product-card:hover {
+    box-shadow: 0 12px 32px color-mix(in srgb, var(--text) 10%, transparent);
+    transform: translateY(-2px);
+}
+
+.product-card .product-title {
+    font-weight: 700;
+    margin-bottom: 0.35rem;
+}
+
+.product-card .product-price {
+    color: var(--primary);
+    font-weight: 800;
+}
+
+.promo-strip {
+    background: linear-gradient(90deg, var(--primary), var(--accent));
+    color: #fff;
+    padding: 0.65rem 1rem;
+    border-radius: var(--radius);
+    text-align: center;
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+/* Pattern fence bridge */
+.pattern-page.pattern-page--gspot {
+    --bg: var(--bg);
+    --bg-card: var(--surface);
+    --text: var(--text);
+    --muted: var(--muted);
+    --accent: var(--accent);
+    --accent-glow: color-mix(in srgb, var(--accent) 65%, var(--secondary));
+    --gold: var(--secondary);
+    --teal: var(--primary);
+    --grav-navy: var(--text);
+    --border: color-mix(in srgb, var(--text) 10%, var(--surface));
+    --radius: var(--radius);
+    --shadow: 0 8px 28px color-mix(in srgb, var(--text) 8%, transparent);
+    --font-sans: var(--font-body);
+    --font-display: var(--font-display);
+    --max: var(--max);
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-body);
+}
+
+.pattern-page--gspot .pattern-content > h1 {
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    background: none;
+    -webkit-text-fill-color: var(--text);
+    color: var(--text);
+}
+
+.site-content:has(.pattern-page--gspot) {
+    max-width: var(--max);
+}
+
+.pattern-page--gspot .btn.primary {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: #fff;
+    border-radius: var(--radius);
+    font-weight: 600;
+}
+
+.pattern-page--gspot .cards-three-up {
+    gap: 1rem;
+}
+
+body.gspot-energy-high .promo-strip {
+    animation: commerce-wiggle 1.2s ease-in-out infinite;
+}
+
+@keyframes commerce-wiggle {
+    50% { filter: brightness(1.08); }
+}
+
+body.gspot-vibe-synthwave {
+    --primary: #7c3aed;
+    --accent: #ff2bd6;
+}

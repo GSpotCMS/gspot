@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.1.0 — 2026-10-28
+
+- **Themes:** **editorial**, **synthwave**, and **commerce** starter themes (layouts, token bridges, two theme patterns each).
+
 ## 1.0.3 — 2026-10-28
 
 - Scrub legacy `mud-*` CSS/JS class prefixes → **`gspot-*`** (fences, editor preview, callout patterns).
