@@ -49,3 +49,22 @@
 .commerce-error { color: #f87171; }
 .commerce-note { color: var(--muted); font-size: 0.9rem; }
 .commerce-success { text-align: center; padding-top: 4rem; }
+.commerce-embed-card {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  margin: 1rem 0;
+  background: var(--card, hsl(270 18% 12%));
+  border: 1px solid var(--border, hsl(270 15% 22%));
+  border-radius: 0.5rem;
+}
+.commerce-embed-card button {
+  background: var(--accent, hsl(300 85% 55%));
+  border: 0;
+  padding: 0.35rem 0.75rem;
+  border-radius: 0.35rem;
+  font-weight: 600;
+  cursor: pointer;
+}

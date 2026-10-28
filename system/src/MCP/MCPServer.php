@@ -682,6 +682,26 @@ class MCPServer
             return "Product '{$slug}' saved.";
         });
 
+        $this->registerTool('gspot_list_orders', [
+            'description' => 'List recent commerce orders (Stripe checkout sessions)',
+            'inputSchema' => [
+                'type' => 'object',
+                'properties' => [
+                    'limit' => ['type' => 'integer', 'description' => 'Max orders (default 20)'],
+                ],
+            ],
+        ], function (array $args): string {
+            $dir = $this->app->rootPath() . '/user/plugins/commerce/data/orders';
+            if (!is_dir($dir)) {
+                return 'Error: commerce plugin not installed or no orders yet.';
+            }
+            require_once $this->app->rootPath() . '/user/plugins/commerce/classes/OrderRegistry.php';
+            $limit = (int) ($args['limit'] ?? 20);
+            $orders = (new \GSpot\UserPlugins\Commerce\OrderRegistry($dir))->all(max(1, min(100, $limit)));
+
+            return json_encode($orders, JSON_PRETTY_PRINT);
+        });
+
         $this->registerTool('gspot_list_mud_patterns', [
             'description' => 'List GSpot MUD HTML patterns (requires gspot-mud plugin)',
             'inputSchema' => ['type' => 'object', 'properties' => []],

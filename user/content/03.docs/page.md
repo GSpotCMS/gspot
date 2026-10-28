@@ -14,6 +14,7 @@ Welcome to the GSpot CMS documentation. Everything you need to find the spot, hi
 - [Content](/docs/content) — Creating and managing pages
 - [Themes](/docs/themes) — Customising your site's look and feel
 - [Plugins](/docs/plugins) — Extending functionality
+- [Commerce](/docs/commerce) — Products, cart, Stripe Checkout
 
 ## Advanced
 

@@ -139,6 +139,7 @@ class AdminRouter
             $this->route('GET', '/commerce/products/edit', fn($r) => $this->commerceProductEdit($r));
             $this->route('POST', '/commerce/products/save', fn($r) => $this->commerceProductSave($r));
             $this->route('POST', '/commerce/products/delete', fn($r) => $this->commerceProductDelete($r));
+            $this->route('GET', '/commerce/orders', fn($r) => $this->commerceOrdersList($r));
         }
     }
 
@@ -157,10 +158,19 @@ class AdminRouter
     {
         $pages = $this->app->router()->listPages();
         $plugins = $this->app->plugins()->getPlugins();
+        $orderCount = 0;
+        if ($this->app->plugins()->isLoaded('commerce')) {
+            require_once $this->app->rootPath() . '/user/plugins/commerce/classes/OrderRegistry.php';
+            $orderCount = (new \GSpot\UserPlugins\Commerce\OrderRegistry(
+                $this->app->rootPath() . '/user/plugins/commerce/data/orders',
+            ))->count();
+        }
 
         return new Response($this->render('dashboard', [
             'pageCount' => count($pages),
             'pluginCount' => count($plugins),
+            'orderCount' => $orderCount,
+            'commerceEnabled' => $this->app->plugins()->isLoaded('commerce'),
             'version' => Application::VERSION,
             'phpVersion' => PHP_VERSION,
             'theme' => $this->app->themes()->activeTheme(),
@@ -527,11 +537,18 @@ HTML;
             $recentHtml .= "<li><a href=\"{$data['prefix']}/pages/edit?slug={$slug}\">{$title}</a></li>";
         }
 
+        $orderStat = '';
+        if (!empty($data['commerceEnabled'])) {
+            $orders = (int) ($data['orderCount'] ?? 0);
+            $orderStat = '<div class="stat-card"><span class="stat-num">' . $orders . '</span><span class="stat-label">Orders</span></div>';
+        }
+
         return <<<HTML
 <h1>Dashboard</h1>
 <div class="stats-grid">
     <div class="stat-card"><span class="stat-num">{$pages}</span><span class="stat-label">Pages</span></div>
     <div class="stat-card"><span class="stat-num">{$plugins}</span><span class="stat-label">Plugins</span></div>
+    {$orderStat}
     <div class="stat-card"><span class="stat-num">{$theme}</span><span class="stat-label">Theme</span></div>
     <div class="stat-card"><span class="stat-num">{$version}</span><span class="stat-label">Version</span></div>
 </div>
@@ -836,6 +853,13 @@ HTML;
         }
 
         return new RedirectResponse($this->prefix . '/commerce/products');
+    }
+
+    private function commerceOrdersList(Request $request): Response
+    {
+        return new Response($this->render('commerce-admin', [
+            'body' => $this->commerceAdmin()->ordersListContent(),
+        ]));
     }
 
     private function mudPatternRegistry(): ?\GSpot\UserPlugins\GspotMud\MudPatternRegistry

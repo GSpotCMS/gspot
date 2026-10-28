@@ -8,6 +8,14 @@
 <body class="commerce-page">
 <main class="commerce-main commerce-success">
     <h1>Payment received</h1>
+    @if(!empty($order))
+        <p>Order <code>{{ $order['id'] ?? '' }}</code> — {{ strtoupper($order['currency'] ?? 'aud') }} {{ number_format(((int)($order['amount_total'] ?? 0)) / 100, 2) }}</p>
+        @if(!empty($order['email']))
+            <p>Receipt email: {{ $order['email'] }}</p>
+        @endif
+    @elseif(!empty($session_id))
+        <p>Session {{ $session_id }} — webhook will file the order receipt shortly.</p>
+    @endif
     <p>Thanks for supporting the groundswell. Find the Spot. Hit it. Ship it.</p>
     <p><a href="/">Back to site</a> · <a href="/commerce/shop">Continue shopping</a></p>
 </main>

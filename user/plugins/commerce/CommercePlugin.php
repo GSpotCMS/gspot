@@ -20,6 +20,8 @@ class CommercePlugin extends AbstractPlugin
         require_once __DIR__ . '/classes/ProductRegistry.php';
         require_once __DIR__ . '/classes/Cart.php';
         require_once __DIR__ . '/classes/StripeCheckout.php';
+        require_once __DIR__ . '/classes/OrderRegistry.php';
+        require_once __DIR__ . '/classes/StripeWebhook.php';
 
         $this->app->renderer()->addViewPath(__DIR__ . '/views');
         $this->app->renderer()->share('commerceCss', '/plugin-assets/commerce/css/shop.css');
@@ -27,10 +29,39 @@ class CommercePlugin extends AbstractPlugin
 
     public function onPageRender(Page &$page): void
     {
-        if (str_contains($page->content(), '[commerce-shop]')) {
+        $content = $page->content();
+
+        if (str_contains($content, '[commerce-shop]')) {
             $html = '<p class="commerce-embed"><a class="btn primary" href="/commerce/shop">Open shop →</a></p>';
-            $page->setContent(str_replace('[commerce-shop]', $html, $page->content()));
+            $content = str_replace('[commerce-shop]', $html, $content);
         }
+
+        if (preg_match_all('/\[commerce-product\s+slug="([a-z0-9-]+)"\]/', $content, $matches, PREG_SET_ORDER)) {
+            foreach ($matches as $match) {
+                $product = $this->registry()->get($match[1]);
+                if ($product === null) {
+                    continue;
+                }
+                $title = htmlspecialchars($product['title'] ?? $match[1]);
+                $price = number_format(((int) ($product['price_cents'] ?? 0)) / 100, 2);
+                $cur = strtoupper($product['currency'] ?? 'aud');
+                $slug = htmlspecialchars($product['slug'] ?? $match[1]);
+                $embed = <<<HTML
+<div class="commerce-embed-card">
+  <strong>{$title}</strong> — {$cur} {$price}
+  <form method="POST" action="/commerce/cart/add" style="display:inline;margin-left:0.5rem">
+    <input type="hidden" name="slug" value="{$slug}">
+    <input type="hidden" name="qty" value="1">
+    <button type="submit">Add to cart</button>
+  </form>
+  <a href="/commerce/product/{$slug}">Details</a>
+</div>
+HTML;
+                $content = str_replace($match[0], $embed, $content);
+            }
+        }
+
+        $page->setContent($content);
     }
 
     public function handleHttp(string $uri, Request $request): ?Response
@@ -44,9 +75,15 @@ class CommercePlugin extends AbstractPlugin
             $path === '/commerce/cart/add' && $request->isMethod('POST') => $this->cartAdd($request),
             $path === '/commerce/cart/update' && $request->isMethod('POST') => $this->cartUpdate($request),
             $path === '/commerce/success' => $this->success($request),
+            $path === '/commerce/webhook/stripe' && $request->isMethod('POST') => $this->stripeWebhook($request),
             str_starts_with($path, '/commerce/product/') => $this->product($path),
             default => null,
         };
+    }
+
+    public function orders(): OrderRegistry
+    {
+        return new OrderRegistry($this->ordersDir());
     }
 
     public function registry(): ProductRegistry
@@ -148,9 +185,38 @@ class CommercePlugin extends AbstractPlugin
 
     private function success(Request $request): Response
     {
+        $sessionId = (string) $request->query->get('session_id', '');
+        $order = $sessionId !== '' ? $this->orders()->get($sessionId) : null;
+
         return new Response($this->renderView('success', [
             'site' => $this->siteData(),
+            'order' => $order,
+            'session_id' => $sessionId,
         ]));
+    }
+
+    private function stripeWebhook(Request $request): Response
+    {
+        try {
+            $handler = new StripeWebhook(
+                $this->stripeSecret(),
+                $this->webhookSecret(),
+                $this->orders(),
+            );
+            $handler->handle($request->getContent(), $request->headers->get('Stripe-Signature'));
+
+            return new Response('ok', 200);
+        } catch (\Throwable $e) {
+            return new Response($e->getMessage(), 400);
+        }
+    }
+
+    private function webhookSecret(): string
+    {
+        $env = (string) ($this->config['config']['stripe_webhook_env'] ?? 'STRIPE_WEBHOOK_SECRET');
+        $fromEnv = getenv($env) ?: ($_ENV[$env] ?? '');
+
+        return is_string($fromEnv) ? trim($fromEnv) : '';
     }
 
     private function stripe(): StripeCheckout
@@ -180,6 +246,13 @@ class CommercePlugin extends AbstractPlugin
     private function productsDir(): string
     {
         $rel = (string) ($this->config['config']['products_path'] ?? 'data/products');
+
+        return __DIR__ . '/' . ltrim($rel, '/');
+    }
+
+    private function ordersDir(): string
+    {
+        $rel = (string) ($this->config['config']['orders_path'] ?? 'data/orders');
 
         return __DIR__ . '/' . ltrim($rel, '/');
     }

@@ -11,6 +11,35 @@ final class CommerceAdmin
 {
     public function __construct(private readonly Application $app) {}
 
+    public function ordersListContent(): string
+    {
+        $prefix = $this->adminPrefix();
+        require_once $this->app->rootPath() . '/user/plugins/commerce/classes/OrderRegistry.php';
+        $orders = (new OrderRegistry($this->app->rootPath() . '/user/plugins/commerce/data/orders'))->all(30);
+        $rows = '';
+        foreach ($orders as $o) {
+            $id = htmlspecialchars($o['id'] ?? '');
+            $email = htmlspecialchars($o['email'] ?? '—');
+            $amt = number_format(((int) ($o['amount_total'] ?? 0)) / 100, 2);
+            $cur = strtoupper($o['currency'] ?? 'aud');
+            $status = htmlspecialchars($o['status'] ?? '');
+            $created = htmlspecialchars($o['created'] ?? '');
+            $rows .= "<tr><td><code>{$id}</code></td><td>{$email}</td><td>{$cur} {$amt}</td><td>{$status}</td><td>{$created}</td></tr>";
+        }
+        if ($rows === '') {
+            $rows = '<tr><td colspan="5" class="empty">No orders yet. Complete a Stripe test checkout with webhooks configured.</td></tr>';
+        }
+
+        return <<<HTML
+<h1>🛒 Commerce — Orders</h1>
+<p><a class="btn" href="{$prefix}/commerce/products">← Products</a></p>
+<table class="admin-table">
+  <thead><tr><th>Session</th><th>Email</th><th>Total</th><th>Status</th><th>Created</th></tr></thead>
+  <tbody>{$rows}</tbody>
+</table>
+HTML;
+    }
+
     public function productsListContent(): string
     {
         $prefix = $this->adminPrefix();
@@ -38,6 +67,7 @@ HTML;
         return <<<HTML
 <h1>🛒 Commerce — Products</h1>
 <p><a class="btn btn-primary" href="{$prefix}/commerce/products/new">+ New product</a>
+   <a class="btn" href="{$prefix}/commerce/orders">Orders</a>
    <a class="btn" href="/commerce/shop" target="_blank" rel="noopener">View shop</a></p>
 <table class="admin-table">
   <thead><tr><th>Title</th><th>Slug</th><th>Price</th><th>Active</th><th></th></tr></thead>
