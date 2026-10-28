@@ -152,6 +152,10 @@ class AdminRouter
             $this->route('GET', '/commerce/affiliates', fn($r) => $this->commerceAffiliatesList($r));
             $this->route('POST', '/commerce/orders/refund', fn($r) => $this->commerceOrderRefund($r));
         }
+
+        if ($this->app->plugins()->isLoaded('commerce-pro')) {
+            $this->route('GET', '/commerce/pro/vendors', fn($r) => $this->commerceProVendors($r));
+        }
     }
 
     private function route(string $method, string $path, callable $handler): void
@@ -854,6 +858,7 @@ HTML;
             'download_file' => (string) $request->request->get('download_file', ''),
             'ship_required' => $request->request->has('ship_required'),
             'billing_type' => (string) $request->request->get('billing_type', 'one_time'),
+            'vendor_slug' => (string) $request->request->get('vendor_slug', ''),
             'active' => $request->request->has('active'),
         ]);
 
@@ -888,6 +893,11 @@ HTML;
 
     private function commerceOrderRefund(Request $request): Response
     {
+        require_once $this->app->rootPath() . '/user/plugins/commerce-pro/classes/ProLicense.php';
+        if (!\GSpot\UserPlugins\CommercePro\ProLicense::isLicensed($this->app)) {
+            return new Response('Commerce Pro license required', 403);
+        }
+
         require_once $this->app->rootPath() . '/user/plugins/commerce/classes/OrderRegistry.php';
         require_once $this->app->rootPath() . '/user/plugins/commerce/classes/StripeRefundService.php';
 
@@ -997,6 +1007,16 @@ HTML;
         return new Response($this->render('commerce-admin', [
             'body' => $this->commerceAdmin()->affiliatesListContent(),
         ]));
+    }
+
+    private function commerceProVendors(Request $request): Response
+    {
+        $plugin = $this->app->plugins()->getPlugin('commerce-pro');
+        $body = $plugin instanceof \GSpot\UserPlugins\CommercePro\CommerceProPlugin
+            ? $plugin->vendorsListAdminHtml()
+            : '<h1>Commerce Pro plugin missing</h1>';
+
+        return new Response($this->render('commerce-admin', ['body' => $body]));
     }
 
     private function commerceCouponDelete(Request $request): Response

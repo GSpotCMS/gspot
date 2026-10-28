@@ -67,7 +67,7 @@ HTML;
             : '<p class="empty">No Stripe customer on file (legacy order)</p>';
 
         $refundForm = '';
-        if ($pi !== '' && ($order['refund_status'] ?? 'none') !== 'full') {
+        if ($this->commerceProLicensed() && $pi !== '' && ($order['refund_status'] ?? 'none') !== 'full') {
             $refundForm = <<<HTML
 <h2>Refund</h2>
 <form method="POST" action="{$prefix}/commerce/orders/refund" onsubmit="return confirm('Issue Stripe refund for this order?')">
@@ -184,7 +184,8 @@ HTML;
    <a class="btn" href="{$prefix}/commerce/gift-cards">Gift cards</a>
    <a class="btn" href="{$prefix}/commerce/subscriptions">Subscriptions</a>
    <a class="btn" href="{$prefix}/commerce/bundles">Bundles</a>
-   <a class="btn" href="{$prefix}/commerce/affiliates">Affiliates</a>
+   <a class="btn" href="{$prefix}/commerce/affiliates">Affiliates (Pro)</a>
+   <a class="btn" href="{$prefix}/commerce/pro/vendors">Vendors (Pro)</a>
    <a class="btn" href="/commerce/shop" target="_blank" rel="noopener">View shop</a></p>
 <table class="admin-table">
   <thead><tr><th>Title</th><th>Slug</th><th>Price</th><th>Stock</th><th>Active</th><th></th></tr></thead>
@@ -208,6 +209,11 @@ HTML;
         $downloadFile = htmlspecialchars($product['download_file'] ?? '');
         $shipRequired = ($product['ship_required'] ?? true) ? 'checked' : '';
         $billing = htmlspecialchars($product['billing_type'] ?? 'one_time');
+        $vendorSlug = htmlspecialchars($product['vendor_slug'] ?? '');
+        $vendorField = '';
+        if ($this->commerceProLicensed()) {
+            $vendorField = '<div class="form-group"><label>Vendor slug (Pro multivendor)</label><input name="vendor_slug" value="' . $vendorSlug . '" pattern="[a-z0-9-]+"></div>';
+        }
         $active = ($product['active'] ?? true) ? 'checked' : '';
         $stockVal = array_key_exists('stock', $product) && $product['stock'] !== null
             ? (string) (int) $product['stock']
@@ -239,6 +245,7 @@ HTML;
     <div class="form-group"><label>Image URL/path</label><input name="image" value="{$image}" placeholder="/media/product.png"></div>
     <div class="form-group"><label>Stripe Price ID (optional)</label><input name="stripe_price_id" value="{$stripePrice}" placeholder="price_..."></div>
     <div class="form-group"><label>Stock (blank = unlimited)</label><input name="stock" value="{$stockVal}" type="number" min="0" step="1"></div>
+    {$vendorField}
     <div class="form-group"><label>Billing</label>
       <select name="billing_type">
         <option value="one_time" {$this->selected($billing, 'one_time')}>One-time</option>
@@ -355,6 +362,10 @@ HTML;
 
     public function affiliatesListContent(): string
     {
+        if (!$this->commerceProLicensed()) {
+            return $this->commerceProRequiredHtml();
+        }
+
         $prefix = $this->adminPrefix();
         require_once $this->app->rootPath() . '/user/plugins/commerce/classes/AffiliateRegistry.php';
         $rows = '';
@@ -432,6 +443,10 @@ HTML;
 
     public function subscriptionsListContent(): string
     {
+        if (!$this->commerceProLicensed()) {
+            return $this->commerceProRequiredHtml();
+        }
+
         $prefix = $this->adminPrefix();
         require_once $this->app->rootPath() . '/user/plugins/commerce/classes/SubscriptionRegistry.php';
         $rows = '';
@@ -463,6 +478,27 @@ HTML;
     private function selected(string $current, string $value): string
     {
         return $current === $value ? 'selected' : '';
+    }
+
+    private function commerceProLicensed(): bool
+    {
+        if (!$this->app->plugins()->isLoaded('commerce-pro')) {
+            return false;
+        }
+
+        require_once $this->app->rootPath() . '/user/plugins/commerce-pro/classes/ProLicense.php';
+
+        return \GSpot\UserPlugins\CommercePro\ProLicense::isLicensed($this->app);
+    }
+
+    private function commerceProRequiredHtml(): string
+    {
+        $plugin = $this->app->plugins()->getPlugin('commerce-pro');
+        if ($plugin instanceof \GSpot\UserPlugins\CommercePro\CommerceProPlugin) {
+            return $plugin->proRequiredHtml();
+        }
+
+        return '<h1>Commerce Pro required</h1>';
     }
 
     private function adminPrefix(): string

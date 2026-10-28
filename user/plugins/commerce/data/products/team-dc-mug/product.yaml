@@ -7,3 +7,4 @@ image: ''
 active: true
 stripe_price_id: ''
 stock: 42
+vendor_slug: team-dc

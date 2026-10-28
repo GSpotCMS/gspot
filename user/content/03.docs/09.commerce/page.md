@@ -6,6 +6,8 @@ description: Flat-file products and Stripe Checkout
 
 # Commerce plugin
 
+> **Tiering:** Core features below are **free**. Affiliates, B2B invoice checkout, abandoned cart cron, admin refunds, subscriptions ledger, and multivendor require **[Commerce Pro](/docs/commerce-pro)** (`COMMERCE_PRO_LICENSE`).
+
 GSpot Commerce stores products as YAML under `user/plugins/commerce/data/products/`. Orders land as YAML receipts when Stripe webhooks fire.
 
 ## Storefront

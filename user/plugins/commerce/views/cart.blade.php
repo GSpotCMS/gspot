@@ -89,10 +89,11 @@
             </section>
         @endif
 
-        @if(!empty($affiliate_code))
+        @if(!empty($commerce_pro) && !empty($affiliate_code))
             <p class="commerce-note">Referred by affiliate <code>{{ $affiliate_code }}</code></p>
         @endif
 
+        @if(!empty($commerce_pro))
         <section class="commerce-coupon">
             <form method="POST" action="/commerce/cart/b2b" class="commerce-coupon-form">
                 <label>Company (B2B) <input name="company" value="{{ $b2b_company ?? '' }}"></label>
@@ -100,6 +101,9 @@
                 <button type="submit">Save B2B options</button>
             </form>
         </section>
+        @else
+            <p class="commerce-note">B2B invoices, affiliates, and abandoned-cart automation require <a href="/docs/commerce-pro">Commerce Pro</a>.</p>
+        @endif
 
         <section class="commerce-coupon">
             <form method="POST" action="/commerce/cart/reminder-email" class="commerce-coupon-form">

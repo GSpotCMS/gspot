@@ -80,6 +80,7 @@ final class ProductRegistry
             'download_file' => (string) ($meta['download_file'] ?? ''),
             'ship_required' => (bool) ($meta['ship_required'] ?? true),
             'billing_type' => $this->normalizeBillingType($meta['billing_type'] ?? 'one_time'),
+            'vendor_slug' => PathGuard::sanitizeSlug((string) ($meta['vendor_slug'] ?? '')),
             'updated' => date('c'),
         ];
 

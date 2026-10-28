@@ -6,6 +6,7 @@ namespace GSpot\UserPlugins\Commerce;
 
 use GSpot\Plugin\AbstractPlugin;
 use GSpot\Router\Page;
+use GSpot\Security\PathGuard;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -168,9 +169,22 @@ HTML;
     {
         $this->captureAffiliateQuery($request);
 
+        $products = $this->registry()->all();
+        $vendor = PathGuard::sanitizeSlug((string) $request->query->get('vendor', ''));
+        if ($vendor !== '' && $this->commerceProLicensed()) {
+            $pro = $this->commerceProPlugin();
+            if ($pro !== null && $pro->vendors()->get($vendor) !== null) {
+                $products = array_values(array_filter(
+                    $products,
+                    fn ($p) => ($p['vendor_slug'] ?? '') === $vendor,
+                ));
+            }
+        }
+
         return new Response($this->renderView('shop', [
-            'products' => $this->registry()->all(),
+            'products' => $products,
             'bundles' => $this->bundles()->all(),
+            'vendor' => $vendor,
             'site' => $this->siteData(),
         ]));
     }
@@ -310,6 +324,9 @@ HTML;
         if (!$this->cronAuthorized($request)) {
             return new Response('Forbidden', 403);
         }
+        if (!$this->commerceProLicensed()) {
+            return new Response('Commerce Pro license required', 403);
+        }
 
         $idle = max(15, (int) ($this->config['config']['abandoned_idle_minutes'] ?? 60));
         $result = $this->abandonedReminder()->run($idle);
@@ -356,7 +373,8 @@ HTML;
             }
 
             $reminderEmail = $this->cart()->reminderEmail();
-            $affiliate = $this->resolveAffiliateCode();
+            $affiliate = $this->commerceProLicensed() ? $this->resolveAffiliateCode() : '';
+            $invoiceCheckout = $this->commerceProLicensed() && $mode === 'payment' && $this->cart()->requestInvoice();
             $session = $this->stripe()->createSession(
                 $lines,
                 $currency !== '' ? $currency : $this->defaultCurrency(),
@@ -368,14 +386,14 @@ HTML;
                     'gift_card' => (string) ($giftCard['code'] ?? ''),
                     'gift_cents' => $giftRed,
                     'affiliate' => $affiliate,
-                    'b2b_company' => $this->cart()->b2bCompany(),
-                    'b2b_invoice' => $this->cart()->requestInvoice(),
+                    'b2b_company' => $this->commerceProLicensed() ? $this->cart()->b2bCompany() : '',
+                    'b2b_invoice' => $invoiceCheckout,
                 ],
                 $ship,
                 $tax,
                 $mode,
                 $autoTax,
-                $mode === 'payment' && $this->cart()->requestInvoice(),
+                $invoiceCheckout,
             );
             $this->cart()->clearCheckoutSession();
             if ($reminderEmail !== '') {
@@ -443,7 +461,7 @@ HTML;
                 $this->abandonedCarts(),
                 $this->giftCards(),
                 $this->subscriptions(),
-                $this->affiliates(),
+                $this->commerceProLicensed() ? $this->affiliates() : null,
             );
             $handler->handle($request->getContent(), $request->headers->get('Stripe-Signature'));
 
@@ -533,6 +551,10 @@ HTML;
 
     private function captureAffiliateQuery(Request $request): void
     {
+        if (!$this->commerceProLicensed()) {
+            return;
+        }
+
         $ref = (string) $request->query->get('ref', '');
         if ($ref === '') {
             return;
@@ -591,6 +613,10 @@ HTML;
 
     private function cartB2b(Request $request): Response
     {
+        if (!$this->commerceProLicensed()) {
+            return new Response($this->renderView('cart', $this->cartViewData('Commerce Pro required for B2B invoice checkout')), 403);
+        }
+
         $this->cart()->setB2b(
             (string) $request->request->get('company', ''),
             $request->request->has('request_invoice'),
@@ -675,9 +701,10 @@ HTML;
             'total_cents' => $currency !== '' ? $this->cart()->totalCents($flatShip, $tax, $currency) : 0,
             'coupon' => $this->cart()->appliedCoupon(),
             'reminder_email' => $this->cart()->reminderEmail(),
-            'affiliate_code' => $this->resolveAffiliateCode(),
+            'affiliate_code' => $this->commerceProLicensed() ? $this->resolveAffiliateCode() : '',
             'b2b_company' => $this->cart()->b2bCompany(),
-            'request_invoice' => $this->cart()->requestInvoice(),
+            'request_invoice' => $this->commerceProLicensed() && $this->cart()->requestInvoice(),
+            'commerce_pro' => $this->commerceProLicensed(),
             'checkout_mode' => $mode,
             'stripe_ready' => $this->stripe()->isConfigured(),
             'site' => $this->siteData(),
@@ -691,6 +718,10 @@ HTML;
 
     private function syncAbandonedCart(): void
     {
+        if (!$this->commerceProLicensed()) {
+            return;
+        }
+
         $email = $this->cart()->reminderEmail();
         if ($email === '' || $this->cart()->isEmpty()) {
             return;
@@ -775,5 +806,23 @@ HTML;
             'title' => $this->app->config()->get('site.title', 'GSpot CMS'),
             'url' => $this->app->config()->get('site.url', 'http://localhost:8080'),
         ];
+    }
+
+    private function commerceProLicensed(): bool
+    {
+        if (!$this->app->plugins()->isLoaded('commerce-pro')) {
+            return false;
+        }
+
+        require_once $this->app->rootPath() . '/user/plugins/commerce-pro/classes/ProLicense.php';
+
+        return \GSpot\UserPlugins\CommercePro\ProLicense::isLicensed($this->app);
+    }
+
+    private function commerceProPlugin(): ?\GSpot\UserPlugins\CommercePro\CommerceProPlugin
+    {
+        $plugin = $this->app->plugins()->getPlugin('commerce-pro');
+
+        return $plugin instanceof \GSpot\UserPlugins\CommercePro\CommerceProPlugin ? $plugin : null;
     }
 }

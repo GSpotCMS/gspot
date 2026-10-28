@@ -1,0 +1,11 @@
+name: commerce-pro
+version: 0.1.0
+description: Commerce Pro — multivendor, affiliates, B2B invoices, abandoned cart automation, admin refunds. License required.
+author: FutureVision Labs · Team DC
+enabled: true
+priority: 26
+events:
+  - onAppBoot
+config:
+  vendors_path: data/vendors
+  license_env: COMMERCE_PRO_LICENSE
