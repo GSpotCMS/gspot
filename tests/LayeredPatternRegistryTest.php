@@ -4,18 +4,18 @@ declare(strict_types=1);
 
 namespace GSpot\Tests;
 
-use GSpot\UserPlugins\GspotMud\LayeredMudPatternRegistry;
-use GSpot\UserPlugins\GspotMud\MudPatternRegistry;
+use GSpot\UserPlugins\GspotPatterns\LayeredPatternRegistry;
+use GSpot\UserPlugins\GspotPatterns\PatternRegistry;
 use PHPUnit\Framework\TestCase;
 
-final class LayeredMudPatternRegistryTest extends TestCase
+final class LayeredPatternRegistryTest extends TestCase
 {
     private string $tmp;
 
     protected function setUp(): void
     {
-        require_once dirname(__DIR__) . '/user/plugins/gspot-mud/classes/MudPatternRegistry.php';
-        require_once dirname(__DIR__) . '/user/plugins/gspot-mud/classes/LayeredMudPatternRegistry.php';
+        require_once dirname(__DIR__) . '/user/plugins/gspot-patterns/classes/PatternRegistry.php';
+        require_once dirname(__DIR__) . '/user/plugins/gspot-patterns/classes/LayeredPatternRegistry.php';
 
         $this->tmp = sys_get_temp_dir() . '/gspot-layered-' . uniqid('', true);
         mkdir($this->tmp . '/core/demo', 0755, true);
@@ -35,10 +35,10 @@ final class LayeredMudPatternRegistryTest extends TestCase
 
     public function testSiteOverridesThemeAndCore(): void
     {
-        $registry = new LayeredMudPatternRegistry(
-            new MudPatternRegistry($this->tmp . '/core'),
-            new MudPatternRegistry($this->tmp . '/theme'),
-            new MudPatternRegistry($this->tmp . '/site'),
+        $registry = new LayeredPatternRegistry(
+            new PatternRegistry($this->tmp . '/core'),
+            new PatternRegistry($this->tmp . '/theme'),
+            new PatternRegistry($this->tmp . '/site'),
         );
 
         $this->assertSame('theme', $registry->get('demo')['source']);

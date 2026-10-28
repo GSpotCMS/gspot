@@ -2,30 +2,30 @@
 
 declare(strict_types=1);
 
-namespace GSpot\UserPlugins\GspotMud;
+namespace GSpot\UserPlugins\GspotPatterns;
 
 use GSpot\Application;
 use GSpot\Security\PathGuard;
 
 /**
- * Core (plugin) → theme → site (user/mud-patterns). Saves and deletes affect site layer only.
+ * Core (plugin) → theme → site (user/pattern-overrides). Saves and deletes affect site layer only.
  */
-final class LayeredMudPatternRegistry
+final class LayeredPatternRegistry
 {
     public function __construct(
-        private readonly MudPatternRegistry $core,
-        private readonly ?MudPatternRegistry $theme,
-        private readonly MudPatternRegistry $site,
+        private readonly PatternRegistry $core,
+        private readonly ?PatternRegistry $theme,
+        private readonly PatternRegistry $site,
     ) {}
 
     public static function forApp(Application $app, string $pluginDir): self
     {
-        $core = new MudPatternRegistry($pluginDir . '/data/patterns');
-        $site = new MudPatternRegistry($app->rootPath() . '/user/mud-patterns');
+        $core = new PatternRegistry($pluginDir . '/data/patterns');
+        $site = new PatternRegistry($app->rootPath() . '/user/pattern-overrides');
 
         $themeName = PathGuard::sanitizeName($app->themes()->activeTheme());
         $themeDir = $app->rootPath() . '/user/themes/' . $themeName . '/patterns';
-        $theme = is_dir($themeDir) ? new MudPatternRegistry($themeDir) : null;
+        $theme = is_dir($themeDir) ? new PatternRegistry($themeDir) : null;
 
         return new self($core, $theme, $site);
     }
@@ -101,13 +101,13 @@ final class LayeredMudPatternRegistry
         return $cats;
     }
 
-    public function siteRegistry(): MudPatternRegistry
+    public function siteRegistry(): PatternRegistry
     {
         return $this->site;
     }
 
     /**
-     * @return array<string, MudPatternRegistry>
+     * @return array<string, PatternRegistry>
      */
     private function layersForRead(): array
     {

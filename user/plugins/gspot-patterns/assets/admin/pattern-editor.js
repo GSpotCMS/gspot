@@ -63,14 +63,14 @@
 </section>`,
   };
 
-  const form = document.getElementById('mud-pattern-form');
+  const form = document.getElementById('pattern-form');
   if (!form) return;
 
   const source = document.getElementById('mud-html-source');
   const quillHost = document.getElementById('mud-quill-editor');
   const previewFrame = document.getElementById('mud-preview-frame');
   const sourceTa = document.getElementById('mud-html-source-editor');
-  const mudCss = form.dataset.mudCss || '/plugin-assets/gspot-mud/css/gspot-mud-fences.css';
+  const patternsCss = form.dataset.patternsCss || '/plugin-assets/gspot-patterns/css/gspot-patterns-fences.css';
   const tabs = document.querySelectorAll('[data-mud-tab]');
   const panes = document.querySelectorAll('[data-mud-pane]');
 
@@ -107,9 +107,9 @@
     const doc =
       '<!DOCTYPE html><html><head><meta charset="utf-8">' +
       '<link rel="stylesheet" href="' +
-      mudCss +
+      patternsCss +
       '"></head><body class="mud-spec-body">' +
-      '<div class="mud-content"><div class="mud-page">' +
+      '<div class="pattern-content"><div class="mud-page">' +
       (html || '') +
       '</div></div></body></html>';
     previewFrame.srcdoc = doc;

@@ -27,7 +27,7 @@ GSpot Commerce stores products as YAML under `user/plugins/commerce/data/product
 [commerce-product slug="team-dc-mug"]
 ```
 
-Use template `default` (or any page). MUD template optional for shop landing pages.
+Use template `default` (or any page). Template `patterns` optional for fenced layout pages.
 
 ## Stripe setup
 

@@ -134,8 +134,8 @@ a:hover {
     background-clip: text;
 }
 
-/* MUD fence bridge — map theme.yaml :root tokens → gspot-mud-fences.css vars */
-.mud-page.mud-page--gspot {
+/* Pattern fence bridge — map theme.yaml :root tokens → gspot-patterns-fences.css vars */
+.pattern-page.pattern-page--gspot {
     --bg: var(--bg);
     --bg-card: var(--surface);
     --text: var(--text);
@@ -157,7 +157,7 @@ a:hover {
     line-height: 1.65;
 }
 
-.mud-page--gspot .mud-content > h1 {
+.pattern-page--gspot .pattern-content > h1 {
     font-family: var(--font-display);
     font-size: clamp(1.75rem, 4vw, 2.25rem);
     margin-bottom: 1.5rem;
@@ -167,46 +167,46 @@ a:hover {
     background-clip: text;
 }
 
-.mud-page--gspot .mud-content > h1 + .mud-pattern,
-.mud-page--gspot .mud-content > h1 + p {
+.pattern-page--gspot .pattern-content > h1 + .gspot-pattern,
+.pattern-page--gspot .pattern-content > h1 + p {
     margin-top: 0;
 }
 
-.site-content:has(.mud-page--gspot) {
+.site-content:has(.pattern-page--gspot) {
     max-width: var(--max, 68rem);
     padding-top: 1.5rem;
 }
 
-.mud-page--gspot .btn.primary {
+.pattern-page--gspot .btn.primary {
     background: var(--accent);
     border-color: var(--accent);
     color: var(--bg);
 }
 
-.mud-page--gspot .btn.primary:hover {
+.pattern-page--gspot .btn.primary:hover {
     background: color-mix(in srgb, var(--accent) 78%, var(--text));
     border-color: color-mix(in srgb, var(--accent) 78%, var(--text));
 }
 
-.mud-page--gspot .hero-mark {
+.pattern-page--gspot .hero-mark {
     background: linear-gradient(145deg, var(--accent), var(--primary));
 }
 
-.mud-page--gspot .compare-head {
+.pattern-page--gspot .compare-head {
     background: color-mix(in srgb, var(--surface) 65%, var(--primary));
     color: var(--text);
 }
 
-.mud-page--gspot .manifesto {
+.pattern-page--gspot .manifesto {
     background: linear-gradient(135deg, color-mix(in srgb, var(--surface) 90%, var(--primary)), var(--bg));
     color: var(--text);
 }
 
-.mud-page--gspot .manifesto p {
+.pattern-page--gspot .manifesto p {
     color: var(--muted);
 }
 
-.mud-page--gspot .manifesto .sign-off {
+.pattern-page--gspot .manifesto .sign-off {
     color: var(--accent);
 }
 

@@ -9,7 +9,7 @@ Copy/edit for X, Dev.to, or Discord `#announcements`.
 **GSpot CMS 1.0** is out. Flat-file. MCP-native. No database drama.
 
 **Find the Spot.** Markdown + YAML you own.  
-**Hit it.** 35+ MCP tools, commerce smoke tests, MUD patterns.  
+**Hit it.** 35+ MCP tools, commerce smoke tests, Patterns.  
 **Ship it.** Vibe Assurance asks: *does your vision land?* (not just “does PHP parse?”)
 
 ```bash

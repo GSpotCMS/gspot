@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace GSpot\UserPlugins\GspotMud;
+namespace GSpot\UserPlugins\GspotPatterns;
 
 use GSpot\Security\PathGuard;
 use Symfony\Component\Yaml\Yaml;
 
-class MudPatternRegistry
+class PatternRegistry
 {
     public function __construct(private readonly string $patternsDir) {}
 

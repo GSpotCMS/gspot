@@ -1,4 +1,4 @@
-# Site MUD pattern overrides
+# Site pattern overrides
 
 Admin and MCP saves write here. This layer wins over **theme** and **core** patterns with the same slug.
 

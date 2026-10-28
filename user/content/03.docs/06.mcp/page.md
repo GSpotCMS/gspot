@@ -60,13 +60,13 @@ Add to your Cursor MCP config (`~/.cursor/mcp.json`):
 | `gspot_list_media` | Media library listing |
 | `gspot_upload_media` | Upload base64 file to `/media/` |
 
-## MUD patterns (gspot-mud)
+## Patterns (gspot-patterns)
 
 | Tool | Description |
 |------|-------------|
-| `gspot_list_mud_patterns` | Pattern library index |
-| `gspot_get_mud_pattern` | Pattern HTML + metadata |
-| `gspot_save_mud_pattern` | Create/update pattern |
+| `gspot_list_patterns` | Pattern library index |
+| `gspot_get_pattern` | Pattern HTML + metadata |
+| `gspot_save_pattern` | Create/update pattern |
 
 ## Commerce (commerce plugin)
 

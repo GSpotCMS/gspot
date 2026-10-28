@@ -127,11 +127,11 @@ class AdminRouter
         $this->route('POST', '/themes/activate', fn($r) => $this->themeActivate($r));
         $this->route('GET', '/javabean', fn($r) => $this->javabeanSettings($r));
         $this->route('POST', '/javabean', fn($r) => $this->javabeanSave($r));
-        $this->route('GET', '/mud/patterns', fn($r) => $this->mudPatternsList($r));
-        $this->route('GET', '/mud/patterns/edit', fn($r) => $this->mudPatternEdit($r));
-        $this->route('GET', '/mud/patterns/new', fn($r) => $this->mudPatternEdit($r));
-        $this->route('POST', '/mud/patterns/save', fn($r) => $this->mudPatternSave($r));
-        $this->route('POST', '/mud/patterns/delete', fn($r) => $this->mudPatternDelete($r));
+        $this->route('GET', '/patterns', fn($r) => $this->patternsList($r));
+        $this->route('GET', '/patterns/edit', fn($r) => $this->patternEdit($r));
+        $this->route('GET', '/patterns/new', fn($r) => $this->patternEdit($r));
+        $this->route('POST', '/patterns/save', fn($r) => $this->patternSave($r));
+        $this->route('POST', '/patterns/delete', fn($r) => $this->patternDelete($r));
 
         if ($this->app->plugins()->isLoaded('commerce')) {
             $this->route('GET', '/commerce/products', fn($r) => $this->commerceProductsList($r));
@@ -220,11 +220,11 @@ class AdminRouter
             }
         }
 
-        $mudPatterns = [];
-        $registry = $this->mudPatternRegistry();
+        $pagePatterns = [];
+        $registry = $this->patternRegistry();
         if ($registry !== null) {
             foreach ($registry->all() as $p) {
-                $mudPatterns[] = [
+                $pagePatterns[] = [
                     'slug' => $p['slug'] ?? '',
                     'title' => $p['title'] ?? ($p['slug'] ?? ''),
                 ];
@@ -235,7 +235,7 @@ class AdminRouter
             'slug' => $slug,
             'content' => $rawContent,
             'isNew' => empty($slug),
-            'mudPatterns' => $mudPatterns,
+            'pagePatterns' => $pagePatterns,
         ]));
     }
 
@@ -506,7 +506,7 @@ HTML;
             ['/plugins', 'Plugins', '🔌'],
             ['/themes', 'Themes', '🎨'],
             ['/javabean', 'JavaBean', '☕'],
-            ['/mud/patterns', 'MUD Patterns', '🧱'],
+            ['/patterns', 'Patterns', '🧱'],
             ['/commerce/products', 'Commerce', '🛒'],
             ['/settings', 'Settings', '⚙️'],
         ];
@@ -530,8 +530,8 @@ HTML;
             'plugins' => $this->renderPluginsContent($data),
             'themes' => $this->renderThemesContent($data),
             'javabean' => $this->renderJavaBeanContent($data),
-            'mud-patterns' => $this->renderMudPatternsContent($data),
-            'mud-pattern-edit' => $this->renderMudPatternEditContent($data),
+            'patterns' => $this->renderPatternsContent($data),
+            'pattern-edit' => $this->renderpatternEditContent($data),
             'commerce-admin' => (string) ($data['body'] ?? ''),
             default => '<h1>404</h1>',
         };
@@ -618,8 +618,8 @@ HTML;
         $heading = $data['isNew'] ? 'New Page' : 'Edit: ' . $slug;
         $action = $data['isNew'] ? 'new' : 'edit';
 
-        $mudInsert = '';
-        $patterns = $data['mudPatterns'] ?? [];
+        $patternInsert = '';
+        $patterns = $data['pagePatterns'] ?? [];
         if ($patterns !== []) {
             $opts = '';
             foreach ($patterns as $p) {
@@ -627,26 +627,26 @@ HTML;
                 $pt = htmlspecialchars($p['title']);
                 $opts .= "<option value=\"{$ps}\">{$pt} ({$ps})</option>";
             }
-            $mudInsert = <<<HTML
-<div class="form-group mud-shortcode-insert">
-    <label>Insert MUD pattern shortcode</label>
+            $patternInsert = <<<HTML
+<div class="form-group pattern-shortcode-insert">
+    <label>Insert pattern shortcode</label>
     <div style="display:flex;gap:0.5rem;flex-wrap:wrap;align-items:center">
-        <select id="mud-page-pattern">{$opts}</select>
-        <button type="button" class="btn btn-sm" id="mud-page-pattern-insert">Insert at cursor</button>
-        <a class="btn btn-sm" href="{$data['prefix']}/mud/patterns" target="_blank" rel="noopener">Pattern library</a>
+        <select id="page-pattern">{$opts}</select>
+        <button type="button" class="btn btn-sm" id="page-pattern-insert">Insert at cursor</button>
+        <a class="btn btn-sm" href="{$data['prefix']}/patterns" target="_blank" rel="noopener">Pattern library</a>
     </div>
-    <small class="muted">Adds <code>[mud-pattern slug="…"]</code> — use template <code>mud</code> in frontmatter for fence CSS.</small>
+    <small class="muted">Adds <code>[pattern slug="…"]</code> — use template <code>mud</code> in frontmatter for fence CSS.</small>
 </div>
 <script>
 (function() {
-  const btn = document.getElementById('mud-page-pattern-insert');
-  const sel = document.getElementById('mud-page-pattern');
+  const btn = document.getElementById('page-pattern-insert');
+  const sel = document.getElementById('page-pattern');
   const ta = document.querySelector('textarea[name="content"]');
   if (!btn || !sel || !ta) return;
   btn.addEventListener('click', function() {
     const slug = sel.value;
     if (!slug) return;
-    const block = '\\n\\n[mud-pattern slug="' + slug + '"]\\n\\n';
+    const block = '\\n\\n[pattern slug="' + slug + '"]\\n\\n';
     const start = ta.selectionStart ?? ta.value.length;
     const end = ta.selectionEnd ?? start;
     ta.value = ta.value.slice(0, start) + block + ta.value.slice(end);
@@ -667,7 +667,7 @@ HTML;
         <label>Slug</label>
         <input type="text" name="slug" value="{$slug}" {$this->readonlyIf(!$data['isNew'])} required>
     </div>
-    {$mudInsert}
+    {$patternInsert}
     <div class="form-group">
         <label>Content (Markdown + YAML frontmatter)</label>
         <textarea name="content" class="code-editor" rows="25">{$content}</textarea>
@@ -1043,24 +1043,24 @@ HTML;
         return max(0, (int) $raw);
     }
 
-    private function mudPatternRegistry(): ?\GSpot\UserPlugins\GspotMud\LayeredMudPatternRegistry
+    private function patternRegistry(): ?\GSpot\UserPlugins\GspotPatterns\LayeredPatternRegistry
     {
-        $plugin = $this->app->plugins()->getPlugin('gspot-mud');
-        if (!$plugin instanceof \GSpot\UserPlugins\GspotMud\GspotMudPlugin) {
+        $plugin = $this->app->plugins()->getPlugin('gspot-patterns');
+        if (!$plugin instanceof \GSpot\UserPlugins\GspotPatterns\GspotPatternsPlugin) {
             return null;
         }
 
         return $plugin->layeredRegistry();
     }
 
-    private function mudPatternsList(Request $request): Response
+    private function patternsList(Request $request): Response
     {
-        $registry = $this->mudPatternRegistry();
+        $registry = $this->patternRegistry();
         if ($registry === null) {
-            return new Response($this->render('mud-patterns', ['installed' => false]));
+            return new Response($this->render('patterns', ['installed' => false]));
         }
 
-        return new Response($this->render('mud-patterns', [
+        return new Response($this->render('patterns', [
             'installed' => true,
             'patterns' => $registry->all(),
             'saved' => $request->query->has('saved'),
@@ -1068,18 +1068,18 @@ HTML;
         ]));
     }
 
-    private function mudPatternEdit(Request $request): Response
+    private function patternEdit(Request $request): Response
     {
-        $registry = $this->mudPatternRegistry();
+        $registry = $this->patternRegistry();
         if ($registry === null) {
-            return new RedirectResponse($this->prefix . '/mud/patterns');
+            return new RedirectResponse($this->prefix . '/patterns');
         }
 
         $slug = (string) $request->query->get('slug', '');
         $pattern = $slug !== '' ? $registry->get($slug) : null;
         $isNew = $slug === '' || $pattern === null;
 
-        return new Response($this->render('mud-pattern-edit', [
+        return new Response($this->render('pattern-edit', [
             'installed' => true,
             'pattern' => $pattern,
             'isNew' => $isNew,
@@ -1088,11 +1088,11 @@ HTML;
         ]));
     }
 
-    private function mudPatternSave(Request $request): Response
+    private function patternSave(Request $request): Response
     {
-        $registry = $this->mudPatternRegistry();
+        $registry = $this->patternRegistry();
         if ($registry === null) {
-            return new RedirectResponse($this->prefix . '/mud/patterns');
+            return new RedirectResponse($this->prefix . '/patterns');
         }
 
         $slug = PathGuard::sanitizeSlug((string) $request->request->get('slug', ''));
@@ -1105,12 +1105,12 @@ HTML;
             'description' => $request->request->get('description', ''),
         ], (string) $request->request->get('html', ''));
 
-        return new RedirectResponse($this->prefix . '/mud/patterns/edit?slug=' . urlencode($slug) . '&saved=1');
+        return new RedirectResponse($this->prefix . '/patterns/edit?slug=' . urlencode($slug) . '&saved=1');
     }
 
-    private function mudPatternDelete(Request $request): Response
+    private function patternDelete(Request $request): Response
     {
-        $registry = $this->mudPatternRegistry();
+        $registry = $this->patternRegistry();
         if ($registry !== null) {
             $slug = PathGuard::sanitizeSlug((string) $request->request->get('slug', ''));
             if ($slug !== '') {
@@ -1118,13 +1118,13 @@ HTML;
             }
         }
 
-        return new RedirectResponse($this->prefix . '/mud/patterns?deleted=1');
+        return new RedirectResponse($this->prefix . '/patterns?deleted=1');
     }
 
-    private function renderMudPatternsContent(array $data): string
+    private function renderPatternsContent(array $data): string
     {
         if (empty($data['installed'])) {
-            return '<h1>🧱 MUD Patterns</h1><p class="empty">gspot-mud plugin not installed.</p>';
+            return '<h1>🧱 Patterns</h1><p class="empty">gspot-patterns plugin not installed.</p>';
         }
 
         $saved = !empty($data['saved']) ? '<div class="alert alert-success">Pattern saved.</div>' : '';
@@ -1138,7 +1138,7 @@ HTML;
             $cat = htmlspecialchars($p['category'] ?? 'general');
             $desc = htmlspecialchars($p['description'] ?? '');
             $source = htmlspecialchars($p['source'] ?? 'core');
-            $shortcode = htmlspecialchars('[mud-pattern slug="' . ($p['slug'] ?? '') . '"]');
+            $shortcode = htmlspecialchars('[pattern slug="' . ($p['slug'] ?? '') . '"]');
             $rows .= <<<HTML
 <tr>
   <td><strong>{$title}</strong><br><small class="muted">{$desc}</small></td>
@@ -1146,7 +1146,7 @@ HTML;
   <td><span class="badge">{$source}</span></td>
   <td>{$cat}</td>
   <td><code>{$shortcode}</code></td>
-  <td><a class="btn btn-sm" href="{$prefix}/mud/patterns/edit?slug={$slug}">Edit</a></td>
+  <td><a class="btn btn-sm" href="{$prefix}/patterns/edit?slug={$slug}">Edit</a></td>
 </tr>
 HTML;
         }
@@ -1156,10 +1156,10 @@ HTML;
         }
 
         return <<<HTML
-<h1>🧱 MUD Patterns</h1>
-<p>Layers: <strong>core</strong> (plugin) → <strong>theme</strong> → <strong>site</strong> (<code>user/mud-patterns/</code>). Saves always write site overrides; core stays pristine.</p>
+<h1>🧱 Patterns</h1>
+<p>Layers: <strong>core</strong> (plugin) → <strong>theme</strong> → <strong>site</strong> (<code>user/pattern-overrides/</code>). Saves always write site overrides; core stays pristine.</p>
 {$saved}{$deleted}
-<p><a class="btn btn-primary" href="{$prefix}/mud/patterns/new">+ New Pattern</a></p>
+<p><a class="btn btn-primary" href="{$prefix}/patterns/new">+ New Pattern</a></p>
 <div class="panel">
   <table class="admin-table">
     <thead><tr><th>Title</th><th>Slug</th><th>Layer</th><th>Category</th><th>Shortcode</th><th></th></tr></thead>
@@ -1169,7 +1169,7 @@ HTML;
 HTML;
     }
 
-    private function renderMudPatternEditContent(array $data): string
+    private function renderpatternEditContent(array $data): string
     {
         if (empty($data['installed'])) {
             return '<h1>404</h1>';
@@ -1184,18 +1184,18 @@ HTML;
         $desc = htmlspecialchars($pattern['description'] ?? '');
         $html = htmlspecialchars($pattern['html'] ?? '', ENT_QUOTES);
         $saved = isset($_GET['saved']) ? '<div class="alert alert-success">Pattern saved!</div>' : '';
-        $heading = $isNew ? 'New MUD Pattern' : 'Edit Pattern: ' . $title;
+        $heading = $isNew ? 'New Pattern' : 'Edit Pattern: ' . $title;
         $source = htmlspecialchars($pattern['source'] ?? ($isNew ? 'site' : 'core'));
         $layerNote = $isNew
-            ? '<p class="muted">New patterns are saved under <code>user/mud-patterns/</code>.</p>'
+            ? '<p class="muted">New patterns are saved under <code>user/pattern-overrides/</code>.</p>'
             : '<p class="muted">Resolved layer: <strong>' . $source . '</strong>. Saving writes a <strong>site</strong> override unless this is already site-only.</p>';
-        $mudCss = '/plugin-assets/gspot-mud/css/gspot-mud-fences.css';
-        $editorCss = '/plugin-assets/gspot-mud/admin/pattern-editor.css';
-        $editorJs = '/plugin-assets/gspot-mud/admin/pattern-editor.js';
+        $patternsCss = '/plugin-assets/gspot-patterns/css/gspot-patterns-fences.css';
+        $editorCss = '/plugin-assets/gspot-patterns/admin/pattern-editor.css';
+        $editorJs = '/plugin-assets/gspot-patterns/admin/pattern-editor.js';
         $deleteForm = '';
         if (!$isNew && $slug !== '' && ($pattern['source'] ?? '') === 'site') {
             $deleteForm = <<<HTML
-<form method="POST" action="{$prefix}/mud/patterns/delete" class="mud-delete-form" onsubmit="return confirm('Delete site override {$slug}? Core/theme pattern may reappear.')">
+<form method="POST" action="{$prefix}/patterns/delete" class="pattern-delete-form" onsubmit="return confirm('Delete site override {$slug}? Core/theme pattern may reappear.')">
   {$data['csrf']}
   <input type="hidden" name="slug" value="{$slug}">
   <button type="submit" class="btn btn-danger">Delete site override</button>
@@ -1207,10 +1207,10 @@ HTML;
 <h1>🧱 {$heading}</h1>
 {$saved}
 {$layerNote}
-<p class="muted"><a href="/mud-demo" target="_blank" rel="noopener">Open MUD demo page</a> to see patterns on the front end.</p>
+<p class="muted"><a href="/pattern-demo" target="_blank" rel="noopener">Open pattern demo page</a> to see patterns on the front end.</p>
 <link href="https://cdn.jsdelivr.net/npm/quill@2.0.2/dist/quill.snow.css" rel="stylesheet">
 <link rel="stylesheet" href="{$editorCss}">
-<form method="POST" action="{$prefix}/mud/patterns/save" id="mud-pattern-form" data-mud-css="{$mudCss}">
+<form method="POST" action="{$prefix}/patterns/save" id="pattern-form" data-patterns-css="{$patternsCss}">
   {$data['csrf']}
   <div class="panel">
     <div class="form-group"><label>Slug (url-safe id)</label><input type="text" name="slug" value="{$slug}" required pattern="[a-z0-9-]+" {$this->readonlyIf(!$isNew && $slug !== '')}></div>
@@ -1252,7 +1252,7 @@ HTML;
   </div>
   <div class="mud-editor-actions">
     <button type="submit" class="btn btn-primary">Save pattern</button>
-    <a class="btn" href="{$prefix}/mud/patterns">Back to library</a>
+    <a class="btn" href="{$prefix}/patterns">Back to library</a>
   </div>
 </form>
 {$deleteForm}

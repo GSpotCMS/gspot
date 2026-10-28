@@ -91,16 +91,16 @@ Threaded discussions with categories, replies, pinning, locking, and search.
 ### Knowledge Base
 Structured documentation with sections, articles, floating TOC, and star ratings.
 
-### GSpot MUD — pattern layers
+### GSpot Patterns — pattern layers
 
 HTML patterns resolve in order:
 
 | Layer | Path | Editable in admin |
 |-------|------|-------------------|
-| **Core** | `plugins/gspot-mud/data/patterns/` | Read-only (save creates site override) |
+| **Core** | `plugins/gspot-patterns/data/patterns/` | Read-only (save creates site override) |
 | **Theme** | `themes/{active}/patterns/` | Read-only (theme pack) |
-| **Site** | `user/mud-patterns/` | Yes (delete removes override) |
+| **Site** | `user/pattern-overrides/` | Yes (delete removes override) |
 
-Shortcode: `[mud-pattern slug="starter-spotlight"]` · page template `mud` for fence CSS.
+Shortcode: `[pattern slug="starter-spotlight"]` · page template `patterns` for fence CSS.
 
 Ship demo patterns with **themes**, not core, to keep the plugin library lean.

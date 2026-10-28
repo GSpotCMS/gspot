@@ -44,7 +44,7 @@ Returns an ordered checklist of MCP tools for agent assembly.
 
 **Recipe: `groundswell-commerce`**
 
-1. List/get MUD pattern (hero or manifesto)
+1. List/get HTML pattern (hero or manifesto)
 2. Edit page + set aura
 3. Apply vibe preset
 4. Commerce checkout smoke

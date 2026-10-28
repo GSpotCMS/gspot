@@ -1,0 +1,11 @@
+name: gspot-patterns
+version: 1.0.0
+description: HTML pattern library, shortcodes, and layout fences for GSpot CMS.
+author: FutureVision Labs · Team DC
+enabled: true
+priority: 20
+events:
+  - onAppBoot
+  - onPageRender
+config:
+  expand_shortcodes: true

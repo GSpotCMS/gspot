@@ -930,13 +930,13 @@ class MCPServer
             return "Affiliate '{$code}' saved.";
         });
 
-        $this->registerTool('gspot_list_mud_patterns', [
-            'description' => 'List GSpot MUD HTML patterns (requires gspot-mud plugin)',
+        $this->registerTool('gspot_list_patterns', [
+            'description' => 'List GSpot Patterns HTML patterns (requires gspot-patterns plugin)',
             'inputSchema' => ['type' => 'object', 'properties' => []],
         ], function (array $args): string {
-            $registry = $this->mudPatternRegistry();
+            $registry = $this->patternRegistry();
             if ($registry === null) {
-                return 'Error: gspot-mud plugin not installed.';
+                return 'Error: gspot-patterns plugin not installed.';
             }
             $list = array_map(static fn ($p) => [
                 'slug' => $p['slug'] ?? '',
@@ -949,8 +949,8 @@ class MCPServer
             return json_encode($list, JSON_PRETTY_PRINT);
         });
 
-        $this->registerTool('gspot_get_mud_pattern', [
-            'description' => 'Get one MUD pattern metadata and HTML body',
+        $this->registerTool('gspot_get_pattern', [
+            'description' => 'Get one HTML pattern metadata and body',
             'inputSchema' => [
                 'type' => 'object',
                 'properties' => [
@@ -959,9 +959,9 @@ class MCPServer
                 'required' => ['slug'],
             ],
         ], function (array $args): string {
-            $registry = $this->mudPatternRegistry();
+            $registry = $this->patternRegistry();
             if ($registry === null) {
-                return 'Error: gspot-mud plugin not installed.';
+                return 'Error: gspot-patterns plugin not installed.';
             }
             $slug = PathGuard::sanitizeSlug($args['slug']);
             $pattern = $registry->get($slug);
@@ -973,8 +973,8 @@ class MCPServer
             return json_encode($pattern, JSON_PRETTY_PRINT);
         });
 
-        $this->registerTool('gspot_save_mud_pattern', [
-            'description' => 'Create or update a MUD HTML pattern (writes site override in user/mud-patterns/)',
+        $this->registerTool('gspot_save_pattern', [
+            'description' => 'Create or update an HTML pattern (writes site override in user/pattern-overrides/)',
             'inputSchema' => [
                 'type' => 'object',
                 'properties' => [
@@ -987,9 +987,9 @@ class MCPServer
                 'required' => ['slug', 'title', 'html'],
             ],
         ], function (array $args): string {
-            $registry = $this->mudPatternRegistry();
+            $registry = $this->patternRegistry();
             if ($registry === null) {
-                return 'Error: gspot-mud plugin not installed.';
+                return 'Error: gspot-patterns plugin not installed.';
             }
             $slug = PathGuard::sanitizeSlug($args['slug']);
             if ($slug === '') {
@@ -1151,10 +1151,10 @@ class MCPServer
         return new \GSpot\UserPlugins\Commerce\ProductRegistry($pluginDir . '/data/products');
     }
 
-    private function mudPatternRegistry(): ?\GSpot\UserPlugins\GspotMud\LayeredMudPatternRegistry
+    private function patternRegistry(): ?\GSpot\UserPlugins\GspotPatterns\LayeredPatternRegistry
     {
-        $plugin = $this->app->plugins()->getPlugin('gspot-mud');
-        if (!$plugin instanceof \GSpot\UserPlugins\GspotMud\GspotMudPlugin) {
+        $plugin = $this->app->plugins()->getPlugin('gspot-patterns');
+        if (!$plugin instanceof \GSpot\UserPlugins\GspotPatterns\GspotPatternsPlugin) {
             return null;
         }
 

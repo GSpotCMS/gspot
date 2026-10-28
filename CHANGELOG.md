@@ -1,8 +1,12 @@
 # Changelog
 
+## 1.0.2 — 2026-10-28
+
+- **Rename:** `gspot-mud` → **`gspot-patterns`**. Shortcode **`[pattern slug="…"]`**, admin **`/patterns`**, site overrides in **`user/pattern-overrides/`**, page template **`patterns`**.
+
 ## 1.0.1 — 2026-10-28
 
-- **MUD pattern layers:** core → theme → site (`user/mud-patterns/`). Admin/MCP saves never mutate core.
+- **MUD pattern layers:** core → theme → site (`user/pattern-overrides/`). Admin/MCP saves never mutate core.
 - Starter theme demo patterns: `starter-spotlight`, `starter-minimal-cta`.
 
 ## 1.0.0 — 2026-10-28 (engineering cut; **public launch NYE 2026**)

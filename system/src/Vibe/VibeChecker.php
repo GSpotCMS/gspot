@@ -104,7 +104,7 @@ final class VibeChecker
             $flags[] = $this->flag('energy_density', 'info', 'High energy aura but long, dense paragraphs; consider breaking the beat.');
         }
 
-        if (str_contains($raw, '[mud-pattern') || str_contains($raw, 'mud-pattern')) {
+        if (str_contains($raw, '[pattern')) {
             $score = min(100, $score + 5);
         }
 

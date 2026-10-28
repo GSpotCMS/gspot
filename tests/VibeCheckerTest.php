@@ -24,7 +24,7 @@ final class VibeCheckerTest extends TestCase
     public function testGroundswellCopyPasses(): void
     {
         $result = (new VibeChecker())->analyze(
-            "# Find the Spot\n\nNeon groundswell. Ship it before the drop.\n\n[mud-pattern slug=\"hero-synthwave\"]",
+            "# Find the Spot\n\nNeon groundswell. Ship it before the drop.\n\n[pattern slug=\"hero-synthwave\"]",
             ['vibe' => 'synthwave', 'bpm' => 174, 'energy' => 'high'],
         );
 
