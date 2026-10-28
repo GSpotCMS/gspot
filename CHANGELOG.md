@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.0.0 — 2026-10-28 (Halloween launch track)
+## 1.0.0 — 2026-10-28 (engineering cut; **public launch NYE 2026**)
 
 **Find the Spot. Hit it. Ship it.**
 

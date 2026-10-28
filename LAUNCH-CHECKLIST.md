@@ -1,4 +1,6 @@
-# GSpot CMS — Launch Checklist (October 31, 2026)
+# GSpot CMS — Launch Checklist (public launch: **NYE 2026**)
+
+> **Note:** Halloween (Oct 31) was checklist drift, not Damo’s call. **New Year’s Eve** is the real launch party: time to test, dogfood, Packagist, promo, and blitz without rush.
 
 ## Pre-Launch (October 1–30)
 
@@ -62,16 +64,22 @@
 - [ ] Dev.to / Hashnode launch article
 - [ ] Reddit r/php, r/webdev posts
 
-## Launch Day (October 31 — Halloween)
+## Pre-NYE testing window (Oct–Dec 2026)
 
-- [ ] Tag **v1.0.0** release (code at `Application::VERSION = 1.0.0` when tagged)
-- [ ] `composer create-project gspot/gspot` verified working (Packagist or VCS repo flag)
-- [ ] Promo site live
-- [ ] Docs site live
-- [ ] Discord open
-- [ ] Social media blitz
-- [ ] Blipvert campaign goes live
-- [ ] "Find the Spot. Hit it. Ship it." launch video drops
+- [ ] Dogfood on a real site (commerce + webhooks + MCP daily driver)
+- [ ] Fix bugs from testing; tag `v1.0.x` patches as needed
+- [ ] Packagist live + `composer create-project` verified
+- [ ] Promo site deployed (can say **preview** until NYE)
+- [ ] Discord + docs subdomain when ready
+- [ ] Gemzy guerrilla assets (smoke + vibe cap) when spoons allow
+
+## Launch Day (December 31, 2026 — NYE)
+
+- [ ] Public launch announcement (thread in `docs/LAUNCH-THREAD.md`)
+- [ ] Promo copy: flip from preview → **1.0 public**
+- [ ] Social blitz + Blipvert campaign
+- [ ] "Find the Spot. Hit it. Ship it." launch video (if not already dropped)
+- [ ] Optional: retag or **`v1.0.0` GitHub release notes** refreshed for NYE story (tag already exists from Oct 28 engineering cut)
 
 ## Inspired Digital Foundation (Post-Launch)
 

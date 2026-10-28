@@ -1,4 +1,6 @@
-# Halloween launch thread (draft)
+# NYE 2026 launch thread (draft)
+
+**Hold until December 31 public launch.** Use Oct–Dec for testing and preview promo only.
 
 Copy/edit for X, Dev.to, or Discord `#announcements`.
 
