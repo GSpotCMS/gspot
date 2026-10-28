@@ -8,35 +8,27 @@
     <style id="gspot-theme-vars">{!! $theme->cssVariables() !!}</style>
     @endif
     <link rel="stylesheet" href="{{ $theme->assetUrl('css/main.css') }}">
+    @if(!empty($commerceCss))
+    <link rel="stylesheet" href="{{ $commerceCss }}">
+    @endif
 </head>
 <body
 @if(isset($page))
-    data-vibe="{{ e($page->meta('vibe', '')) }}"
-    data-bpm="{{ e((string) $page->meta('bpm', '')) }}"
-    data-energy="{{ e($page->meta('energy', '')) }}"
-    class="theme-commerce @if($page->meta('vibe')) gspot-aura gspot-vibe-{{ $page->meta('vibe') }} @endif @if($page->meta('energy')) gspot-energy-{{ $page->meta('energy') }} @endif"
+    class="theme-commerce @if(in_array($page->slug(), ['home', 'shop'], true)) is-storefront @endif"
 @else
     class="theme-commerce"
 @endif
 >
-    <header class="site-header">
-        <div class="site-header-inner">
-            <a href="/" class="site-brand">{{ $site['title'] }}</a>
-            <nav class="site-nav">
-                <a href="/commerce/shop">Shop</a>
-                <a href="/docs/commerce">Commerce docs</a>
-            </nav>
-        </div>
-    </header>
+    @include('partials.store-masthead')
 
     <main class="site-content">
         @yield('content')
     </main>
 
-    <footer class="site-footer">
+    <footer class="site-footer store-footer">
         <div class="site-footer-inner">
             <p>Powered by <a href="https://gspotcms.com">GSpot CMS</a> · Commerce theme</p>
-            <p class="site-footer-note">Pairs with the commerce plugin — Stripe checkout, flat-file products.</p>
+            <p class="site-footer-note"><a href="/gspot-admin/">Admin</a> · <a href="/commerce/shop">Catalog</a> · swap to <a href="/docs/themes">editorial</a> or <a href="/">synthwave</a></p>
         </div>
     </footer>
 

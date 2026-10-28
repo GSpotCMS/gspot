@@ -47,6 +47,7 @@ class CommercePlugin extends AbstractPlugin
 
         $this->app->renderer()->addViewPath(__DIR__ . '/views');
         $this->app->renderer()->share('commerceCss', '/plugin-assets/commerce/css/shop.css');
+        $this->app->renderer()->share('commerceCatalog', $this->registry()->all());
     }
 
     public function onPageRender(Page &$page): void
@@ -105,7 +106,27 @@ HTML;
             }
         }
 
+        $this->app->renderer()->share('commerceCartMini', $this->miniCartSummary());
+
         $page->setContent($content);
+    }
+
+    /** @return array{count: int, lines: list<array>, subtotal_cents: int, currency: string} */
+    public function miniCartSummary(): array
+    {
+        $lines = $this->cart()->lines();
+        $count = 0;
+        foreach ($lines as $line) {
+            $count += (int) ($line['qty'] ?? 0);
+        }
+        $currency = $this->cart()->checkoutCurrency();
+
+        return [
+            'count' => $count,
+            'lines' => $lines,
+            'subtotal_cents' => $this->cart()->subtotalCents(),
+            'currency' => $currency !== '' ? strtoupper($currency) : 'AUD',
+        ];
     }
 
     public function handleHttp(string $uri, Request $request): ?Response
@@ -115,6 +136,7 @@ HTML;
         return match (true) {
             $path === '/commerce/shop' => $this->shop($request),
             $path === '/commerce/cart' => $this->cartPage($request),
+            $path === '/commerce/cart/mini' => $this->cartMiniJson(),
             $path === '/commerce/checkout' && $request->isMethod('POST') => $this->checkout($request),
             $path === '/commerce/cart/add' && $request->isMethod('POST') => $this->cartAdd($request),
             $path === '/commerce/cart/add-bundle' && $request->isMethod('POST') => $this->cartAddBundle($request),
@@ -210,6 +232,30 @@ HTML;
         return new Response($this->renderView('cart', $this->cartViewData()));
     }
 
+    private function cartMiniJson(): Response
+    {
+        $summary = $this->miniCartSummary();
+        $payload = [
+            'count' => $summary['count'],
+            'subtotal_cents' => $summary['subtotal_cents'],
+            'currency' => $summary['currency'],
+            'lines' => array_map(static function (array $line): array {
+                $p = $line['product'] ?? [];
+
+                return [
+                    'slug' => $p['slug'] ?? '',
+                    'title' => $p['title'] ?? '',
+                    'qty' => (int) ($line['qty'] ?? 0),
+                    'line_cents' => (int) ($line['line_cents'] ?? 0),
+                ];
+            }, $summary['lines']),
+        ];
+
+        return new Response(json_encode($payload, JSON_THROW_ON_ERROR), 200, [
+            'Content-Type' => 'application/json; charset=UTF-8',
+        ]);
+    }
+
     private function cartAdd(Request $request): Response
     {
         $this->cart()->add(
@@ -217,9 +263,12 @@ HTML;
             (int) $request->request->get('qty', 1),
         );
 
-        $redirect = $request->request->get('redirect', '/commerce/cart');
+        $redirect = (string) $request->request->get('redirect', '');
+        if ($redirect === '' || !str_starts_with($redirect, '/')) {
+            $redirect = (string) ($request->headers->get('Referer') ?: '/shop');
+        }
 
-        return new RedirectResponse((string) $redirect);
+        return new RedirectResponse($redirect);
     }
 
     private function cartAddBundle(Request $request): Response

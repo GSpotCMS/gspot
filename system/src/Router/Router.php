@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace GSpot\Router;
 
 use GSpot\Config\ConfigManager;
-use League\CommonMark\CommonMarkConverter;
 use League\CommonMark\Extension\FrontMatter\FrontMatterExtension;
+use League\CommonMark\Extension\GithubFlavoredMarkdownExtension;
 use League\CommonMark\Extension\FrontMatter\Output\RenderedContentWithFrontMatter;
 use League\CommonMark\Environment\Environment;
 use League\CommonMark\MarkdownConverter;
@@ -24,6 +24,7 @@ class Router
 
         $environment = new Environment([]);
         $environment->addExtension(new \League\CommonMark\Extension\CommonMark\CommonMarkCoreExtension());
+        $environment->addExtension(new GithubFlavoredMarkdownExtension());
         $environment->addExtension(new FrontMatterExtension());
         $this->markdown = new MarkdownConverter($environment);
     }

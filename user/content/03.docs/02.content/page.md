@@ -50,7 +50,7 @@ published: true
 
 ## Markdown
 
-Content below the frontmatter is standard Markdown (CommonMark spec via league/commonmark).
+Content below the frontmatter is Markdown via league/commonmark: **CommonMark** plus **GitHub-Flavored Markdown** (tables, task lists, strikethrough, autolinks).
 
 Supported features:
 - Headings, bold, italic, strikethrough

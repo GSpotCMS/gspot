@@ -465,6 +465,30 @@ body.is-magazine-home .site-content {
     margin-bottom: 0.35rem;
 }
 
+.page table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1.25rem 0 1.5rem;
+    font-size: 0.88rem;
+    font-family: var(--font-sans);
+}
+
+.page th,
+.page td {
+    border: var(--rule);
+    padding: 0.5rem 0.7rem;
+    text-align: left;
+    vertical-align: top;
+}
+
+.page th {
+    background: var(--surface);
+    font-weight: 700;
+    text-transform: uppercase;
+    font-size: 0.72rem;
+    letter-spacing: 0.06em;
+}
+
 .page code {
     font-family: ui-monospace, monospace;
     font-size: 0.82em;

@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.1.5 — 2026-10-28
+
+- **Commerce theme:** storefront home + shop layouts, featured picks rail, live catalog grid, mini cart dropdown, teal token lock (ignores page vibe aura).
+- **Commerce plugin:** share `commerceCatalog` + `commerceCartMini`; `/commerce/cart/mini` JSON; add-to-cart redirect back to referer.
+- **Routing:** delegate `/commerce/*` from `Application::handleRequest` when plugin handles the path.
+- **Markdown:** GitHub-Flavored Markdown (tables, task lists, etc.) in page parser; table styles on all starter themes.
+
 ## 1.1.4 — 2026-10-28
 
 - **Synthwave theme:** night-drive home arena (HUD masthead, marquee, hero stage + EQ, neon lanes, module deck); Orbitron webfont; BPM-synced pulse.

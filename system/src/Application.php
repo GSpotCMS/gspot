@@ -16,7 +16,7 @@ use Illuminate\Container\Container;
 
 class Application
 {
-    public const VERSION = '1.1.4';
+    public const VERSION = '1.1.5';
 
     private static ?self $instance = null;
 
@@ -92,6 +92,24 @@ class Application
 
     public function handleRequest(string $uri, string $method = 'GET'): string
     {
+        if (str_starts_with($uri, '/commerce')) {
+            $commerce = $this->plugins()->getPlugin('commerce');
+            if ($commerce !== null && method_exists($commerce, 'handleHttp')) {
+                $request = \Symfony\Component\HttpFoundation\Request::createFromGlobals();
+                $response = $commerce->handleHttp($uri, $request);
+                if ($response !== null) {
+                    http_response_code($response->getStatusCode());
+                    foreach ($response->headers->allPreserveCaseWithoutCookies() as $name => $values) {
+                        foreach ($values as $value) {
+                            header($name . ': ' . $value, replace: false);
+                        }
+                    }
+
+                    return (string) $response->getContent();
+                }
+            }
+        }
+
         $route = $this->router->resolve($uri);
 
         if ($route === null) {

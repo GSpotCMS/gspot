@@ -235,6 +235,29 @@ body.is-synth-home .site-content {
     color: var(--text);
 }
 
+.page table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1.25rem 0 1.5rem;
+    font-size: 0.88rem;
+}
+
+.page th,
+.page td {
+    border: 1px solid color-mix(in srgb, var(--accent) 35%, transparent);
+    padding: 0.55rem 0.75rem;
+    text-align: left;
+}
+
+.page th {
+    background: color-mix(in srgb, var(--primary) 35%, var(--surface));
+    color: var(--accent);
+    font-family: var(--font-display);
+    font-size: 0.75rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
 .page code {
     background: color-mix(in srgb, var(--primary) 35%, var(--surface));
     border: 1px solid color-mix(in srgb, var(--accent) 40%, transparent);
