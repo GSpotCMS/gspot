@@ -6,6 +6,8 @@ namespace GSpot\MCP;
 
 use GSpot\Application;
 use GSpot\Security\PathGuard;
+use GSpot\Vibe\AssemblyRecipes;
+use GSpot\Vibe\VibeChecker;
 
 /**
  * GSpot MCP Server — stdio transport
@@ -226,6 +228,9 @@ class MCPServer
                     'title' => ['type' => 'string', 'description' => 'New title (optional)'],
                     'content' => ['type' => 'string', 'description' => 'New markdown content (optional)'],
                     'template' => ['type' => 'string', 'description' => 'New template (optional)'],
+                    'vibe' => ['type' => 'string', 'description' => 'Content aura vibe slug (optional)'],
+                    'bpm' => ['type' => 'integer', 'description' => 'Content aura BPM (optional)'],
+                    'energy' => ['type' => 'string', 'description' => 'Content aura energy: low, medium, high (optional)'],
                 ],
                 'required' => ['slug'],
             ],
@@ -254,9 +259,24 @@ class MCPServer
                     $frontMatter = isset($parts[1]) ? \Symfony\Component\Yaml\Yaml::parse(trim($parts[1])) : [];
                     $body = trim($parts[2] ?? '');
 
-                    if (isset($args['title'])) $frontMatter['title'] = $args['title'];
-                    if (isset($args['template'])) $frontMatter['template'] = $args['template'];
-                    if (isset($args['content'])) $body = $args['content'];
+                    if (isset($args['title'])) {
+                        $frontMatter['title'] = $args['title'];
+                    }
+                    if (isset($args['template'])) {
+                        $frontMatter['template'] = $args['template'];
+                    }
+                    if (isset($args['content'])) {
+                        $body = $args['content'];
+                    }
+                    if (array_key_exists('vibe', $args)) {
+                        $frontMatter['vibe'] = PathGuard::sanitizeSlug((string) $args['vibe']);
+                    }
+                    if (array_key_exists('bpm', $args)) {
+                        $frontMatter['bpm'] = max(0, (int) $args['bpm']);
+                    }
+                    if (array_key_exists('energy', $args)) {
+                        $frontMatter['energy'] = PathGuard::sanitizeSlug((string) $args['energy']);
+                    }
 
                     $yaml = \Symfony\Component\Yaml\Yaml::dump($frontMatter);
                     $md = "---\n{$yaml}---\n\n{$body}\n";
@@ -987,6 +1007,68 @@ class MCPServer
             return "Pattern '{$slug}' saved.";
         });
 
+        $this->registerTool('gspot_vibe_check', [
+            'description' => 'Vibe Assurance: score brand resonance and aesthetic intent (Gemzy Special)',
+            'inputSchema' => [
+                'type' => 'object',
+                'properties' => [
+                    'slug' => ['type' => 'string', 'description' => 'Page slug to analyze (reads page.md)'],
+                    'content' => ['type' => 'string', 'description' => 'Raw markdown/HTML instead of slug'],
+                ],
+            ],
+        ], function (array $args): string {
+            $checker = new VibeChecker();
+            $aura = [];
+            $body = (string) ($args['content'] ?? '');
+
+            if ($body === '' && isset($args['slug'])) {
+                $resolved = $this->resolvePageMarkdown((string) $args['slug']);
+                if ($resolved === null) {
+                    return 'Error: Page not found.';
+                }
+                $body = $resolved['body'];
+                $aura = $resolved['aura'];
+            }
+
+            if (trim($body) === '') {
+                return 'Error: Provide slug or content.';
+            }
+
+            $siteDesc = (string) $this->app->config()->get('site.description', '');
+            $report = $checker->analyze($body, $aura, $siteDesc);
+
+            return json_encode($report, JSON_PRETTY_PRINT);
+        });
+
+        $this->registerTool('gspot_assembly_recipe', [
+            'description' => 'Get MCP tool checklist for agent assembly (pattern + commerce + vibe gate)',
+            'inputSchema' => [
+                'type' => 'object',
+                'properties' => [
+                    'recipe' => ['type' => 'string', 'description' => 'Recipe id (default: groundswell-commerce)'],
+                    'run_vibe_check' => ['type' => 'boolean', 'description' => 'If true, run vibe check on example_page_slug'],
+                ],
+            ],
+        ], function (array $args): string {
+            $id = PathGuard::sanitizeSlug((string) ($args['recipe'] ?? 'groundswell-commerce'));
+            $recipe = AssemblyRecipes::get($id);
+            if ($recipe === null) {
+                return 'Error: Unknown recipe. Available: ' . implode(', ', array_keys(AssemblyRecipes::all()));
+            }
+
+            $out = $recipe;
+            if (!empty($args['run_vibe_check']) && isset($recipe['example_page_slug'])) {
+                $resolved = $this->resolvePageMarkdown((string) $recipe['example_page_slug']);
+                if ($resolved !== null) {
+                    $checker = new VibeChecker();
+                    $siteDesc = (string) $this->app->config()->get('site.description', '');
+                    $out['vibe_check'] = $checker->analyze($resolved['body'], $resolved['aura'], $siteDesc);
+                }
+            }
+
+            return json_encode($out, JSON_PRETTY_PRINT);
+        });
+
         $this->registerTool('gspot_cache_clear', [
             'description' => 'Clear compiled views and page cache',
             'inputSchema' => ['type' => 'object', 'properties' => []],
@@ -1012,6 +1094,48 @@ class MCPServer
             ];
             return json_encode($info, JSON_PRETTY_PRINT);
         });
+    }
+
+    /**
+     * @return array{body: string, aura: array{vibe?: string, bpm?: int, energy?: string}}|null
+     */
+    private function resolvePageMarkdown(string $slug): ?array
+    {
+        $slug = PathGuard::sanitizeSlug($slug);
+        if ($slug === '') {
+            return null;
+        }
+
+        $contentDir = $this->app->rootPath() . '/user/content';
+        $dirs = glob($contentDir . '/*', GLOB_ONLYDIR) ?: [];
+
+        foreach ($dirs as $dir) {
+            $cleanName = preg_replace('/^\d+\./', '', basename($dir));
+            if ($cleanName !== $slug) {
+                continue;
+            }
+            $file = PathGuard::resolveUnder($dir, 'page.md');
+            if ($file === null || !is_readable($file)) {
+                return null;
+            }
+            $raw = (string) file_get_contents($file);
+            $parts = preg_split('/^---\s*$/m', $raw, 3);
+            $frontMatter = isset($parts[1]) ? \Symfony\Component\Yaml\Yaml::parse(trim($parts[1])) : [];
+            if (!is_array($frontMatter)) {
+                $frontMatter = [];
+            }
+
+            return [
+                'body' => trim($parts[2] ?? $raw),
+                'aura' => [
+                    'vibe' => (string) ($frontMatter['vibe'] ?? ''),
+                    'bpm' => $frontMatter['bpm'] ?? null,
+                    'energy' => (string) ($frontMatter['energy'] ?? ''),
+                ],
+            ];
+        }
+
+        return null;
     }
 
     private function commerceRegistry(): ?\GSpot\UserPlugins\Commerce\ProductRegistry

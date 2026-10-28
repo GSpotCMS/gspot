@@ -209,3 +209,18 @@ a:hover {
 .mud-page--gspot .manifesto .sign-off {
     color: var(--accent);
 }
+
+/* Content aura (vibe / bpm / energy frontmatter) */
+body.gspot-energy-high .site-header {
+    border-bottom: 2px solid var(--accent);
+    box-shadow: 0 0 24px color-mix(in srgb, var(--accent) 35%, transparent);
+}
+
+body.gspot-energy-low .site-content {
+    letter-spacing: 0.01em;
+}
+
+body.gspot-vibe-synthwave {
+    --accent: #ff2bd6;
+    --secondary: #06b6d4;
+}

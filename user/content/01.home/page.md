@@ -2,6 +2,9 @@
 title: Home
 template: default
 description: Welcome to GSpot CMS
+vibe: synthwave
+bpm: 128
+energy: high
 ---
 
 # Welcome to GSpot CMS

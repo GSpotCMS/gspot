@@ -16,6 +16,7 @@ Welcome to the GSpot CMS documentation. Everything you need to find the spot, hi
 - [Plugins](/docs/plugins) — Extending functionality
 - [Commerce](/docs/commerce) — Products, cart, Stripe Checkout
 - [Commerce Pro](/docs/commerce-pro) — Licensed multivendor and advanced ops
+- [Vibe Check](/docs/vibe-check) — Vibe Assurance MCP + content aura
 
 ## Advanced
 

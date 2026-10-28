@@ -9,7 +9,14 @@
     @endif
     <link rel="stylesheet" href="{{ $theme->assetUrl('css/main.css') }}">
 </head>
-<body>
+<body
+@if(isset($page))
+    data-vibe="{{ e($page->meta('vibe', '')) }}"
+    data-bpm="{{ e((string) $page->meta('bpm', '')) }}"
+    data-energy="{{ e($page->meta('energy', '')) }}"
+    class="@if($page->meta('vibe')) gspot-aura gspot-vibe-{{ $page->meta('vibe') }} @endif @if($page->meta('energy')) gspot-energy-{{ $page->meta('energy') }} @endif"
+@endif
+>
     <header class="site-header">
         <nav>
             <a href="/" class="site-brand">{{ $site['title'] }}</a>
