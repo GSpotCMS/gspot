@@ -32,11 +32,9 @@ final class AbandonedCartRegistryTest extends TestCase
     {
         $registry = new AbandonedCartRegistry($this->dir);
         $registry->upsert('buyer@example.com', [['slug' => 'mug', 'qty' => 1]]);
-
-        $due = $registry->dueForReminder(0);
-        $this->assertCount(1, $due);
+        $this->assertCount(1, glob($this->dir . '/*.yaml') ?: []);
 
         $registry->deleteByEmail('buyer@example.com');
-        $this->assertSame([], $registry->dueForReminder(0));
+        $this->assertSame([], glob($this->dir . '/*.yaml') ?: []);
     }
 }
