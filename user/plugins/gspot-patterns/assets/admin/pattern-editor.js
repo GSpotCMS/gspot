@@ -38,7 +38,7 @@
     <a class="callout-btn" href="#">Action</a>
   </div>
 </section>`,
-    'mud-callout-info': `<aside class="mud-callout mud-callout--info">
+    'gspot-callout-info': `<aside class="gspot-callout gspot-callout--info">
   <strong>Note</strong>
   <p>Helpful info for readers.</p>
 </aside>`,
@@ -66,15 +66,15 @@
   const form = document.getElementById('pattern-form');
   if (!form) return;
 
-  const source = document.getElementById('mud-html-source');
-  const quillHost = document.getElementById('mud-quill-editor');
-  const previewFrame = document.getElementById('mud-preview-frame');
-  const sourceTa = document.getElementById('mud-html-source-editor');
+  const source = document.getElementById('pattern-html-source');
+  const quillHost = document.getElementById('pattern-quill-editor');
+  const previewFrame = document.getElementById('pattern-preview-frame');
+  const sourceTa = document.getElementById('pattern-html-source-editor');
   const patternsCss = form.dataset.patternsCss || '/plugin-assets/gspot-patterns/css/gspot-patterns-fences.css';
-  const tabs = document.querySelectorAll('[data-mud-tab]');
-  const panes = document.querySelectorAll('[data-mud-pane]');
+  const tabs = document.querySelectorAll('[data-gspot-tab]');
+  const panes = document.querySelectorAll('[data-gspot-pane]');
 
-  const quill = new Quill('#mud-quill-editor', {
+  const quill = new Quill('#pattern-quill-editor', {
     theme: 'snow',
     modules: {
       toolbar: [
@@ -88,8 +88,8 @@
   });
 
   function currentHtml() {
-    const active = document.querySelector('[data-mud-pane].is-active');
-    if (active && active.dataset.mudPane === 'source') {
+    const active = document.querySelector('[data-gspot-pane].is-active');
+    if (active && active.dataset.patternPane === 'source') {
       return sourceTa.value;
     }
     return quill.getSemanticHTML ? quill.getSemanticHTML() : quill.root.innerHTML;
@@ -108,8 +108,8 @@
       '<!DOCTYPE html><html><head><meta charset="utf-8">' +
       '<link rel="stylesheet" href="' +
       patternsCss +
-      '"></head><body class="mud-spec-body">' +
-      '<div class="pattern-content"><div class="mud-page">' +
+      '"></head><body class="gspot-spec-body">' +
+      '<div class="pattern-content"><div class="pattern-page">' +
       (html || '') +
       '</div></div></body></html>';
     previewFrame.srcdoc = doc;
@@ -131,12 +131,12 @@
 
   tabs.forEach(function (btn) {
     btn.addEventListener('click', function () {
-      const tab = btn.dataset.mudTab;
+      const tab = btn.dataset.patternTab;
       tabs.forEach(function (b) {
         b.classList.toggle('is-active', b === btn);
       });
       panes.forEach(function (pane) {
-        const on = pane.dataset.mudPane === tab;
+        const on = pane.dataset.patternPane === tab;
         pane.classList.toggle('is-active', on);
       });
       if (tab === 'source') {
@@ -154,13 +154,13 @@
   quill.on('text-change', schedulePreview);
   sourceTa.addEventListener('input', schedulePreview);
 
-  document.getElementById('mud-snippet-insert')?.addEventListener('click', function () {
-    const sel = document.getElementById('mud-snippet-select');
+  document.getElementById('pattern-snippet-insert')?.addEventListener('click', function () {
+    const sel = document.getElementById('pattern-snippet-select');
     const key = sel && sel.value;
     if (!key || !SNIPPETS[key]) return;
     const block = SNIPPETS[key];
-    const active = document.querySelector('[data-mud-pane].is-active');
-    if (active && active.dataset.mudPane === 'source') {
+    const active = document.querySelector('[data-gspot-pane].is-active');
+    if (active && active.dataset.patternPane === 'source') {
       sourceTa.value = sourceTa.value + '\n' + block;
     } else {
       const html = quill.getSemanticHTML ? quill.getSemanticHTML() : quill.root.innerHTML;

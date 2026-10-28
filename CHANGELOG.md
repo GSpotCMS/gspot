@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.0.3 — 2026-10-28
+
+- Scrub legacy `mud-*` CSS/JS class prefixes → **`gspot-*`** (fences, editor preview, callout patterns).
+
 ## 1.0.2 — 2026-10-28
 
 - **Rename:** `gspot-mud` → **`gspot-patterns`**. Shortcode **`[pattern slug="…"]`**, admin **`/patterns`**, site overrides in **`user/pattern-overrides/`**, page template **`patterns`**.

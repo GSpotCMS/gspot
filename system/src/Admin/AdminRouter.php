@@ -635,7 +635,7 @@ HTML;
         <button type="button" class="btn btn-sm" id="page-pattern-insert">Insert at cursor</button>
         <a class="btn btn-sm" href="{$data['prefix']}/patterns" target="_blank" rel="noopener">Pattern library</a>
     </div>
-    <small class="muted">Adds <code>[pattern slug="…"]</code> — use template <code>mud</code> in frontmatter for fence CSS.</small>
+    <small class="muted">Adds <code>[pattern slug="…"]</code> — use template <code>patterns</code> in frontmatter for fence CSS.</small>
 </div>
 <script>
 (function() {
@@ -1220,37 +1220,37 @@ HTML;
   </div>
   <div class="panel">
     <h2>Pattern body</h2>
-    <div class="mud-editor-snippet-bar">
-      <select id="mud-snippet-select">
+    <div class="pattern-editor-snippet-bar">
+      <select id="pattern-snippet-select">
         <option value="">Insert snippet…</option>
         <option value="hero-split">Hero (split)</option>
         <option value="hero-fullscreen">Hero (fullscreen)</option>
         <option value="cards-three">Cards (×3)</option>
         <option value="callout">Callout band</option>
-        <option value="mud-callout-info">Info callout</option>
+        <option value="gspot-callout-info">Info callout</option>
         <option value="quote">Quote block</option>
         <option value="manifesto">Manifesto</option>
         <option value="pricing-card">Pricing grid</option>
       </select>
-      <button type="button" class="btn btn-sm" id="mud-snippet-insert">Insert</button>
+      <button type="button" class="btn btn-sm" id="pattern-snippet-insert">Insert</button>
     </div>
-    <div class="mud-editor-tabs">
-      <button type="button" class="is-active" data-mud-tab="visual">Visual</button>
-      <button type="button" data-mud-tab="source">HTML source</button>
-      <button type="button" data-mud-tab="preview">Live preview</button>
+    <div class="pattern-editor-tabs">
+      <button type="button" class="is-active" data-gspot-tab="visual">Visual</button>
+      <button type="button" data-gspot-tab="source">HTML source</button>
+      <button type="button" data-gspot-tab="preview">Live preview</button>
     </div>
-    <div class="mud-editor-pane is-active" data-mud-pane="visual">
-      <div id="mud-quill-editor" class="mud-quill-wrap"></div>
+    <div class="pattern-editor-pane is-active" data-gspot-pane="visual">
+      <div id="pattern-quill-editor" class="pattern-quill-wrap"></div>
     </div>
-    <div class="mud-editor-pane" data-mud-pane="source">
-      <textarea id="mud-html-source-editor" class="mud-source-editor" spellcheck="false"></textarea>
+    <div class="pattern-editor-pane" data-gspot-pane="source">
+      <textarea id="pattern-html-source-editor" class="pattern-source-editor" spellcheck="false"></textarea>
     </div>
-    <div class="mud-editor-pane" data-mud-pane="preview">
-      <iframe id="mud-preview-frame" class="mud-preview-frame" title="Pattern preview"></iframe>
+    <div class="pattern-editor-pane" data-gspot-pane="preview">
+      <iframe id="pattern-preview-frame" class="pattern-preview-frame" title="Pattern preview"></iframe>
     </div>
-    <textarea name="html" id="mud-html-source" style="display:none">{$html}</textarea>
+    <textarea name="html" id="pattern-html-source" style="display:none">{$html}</textarea>
   </div>
-  <div class="mud-editor-actions">
+  <div class="pattern-editor-actions">
     <button type="submit" class="btn btn-primary">Save pattern</button>
     <a class="btn" href="{$prefix}/patterns">Back to library</a>
   </div>

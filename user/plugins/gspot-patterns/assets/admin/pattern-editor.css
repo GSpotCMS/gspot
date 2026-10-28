@@ -1,10 +1,10 @@
-.mud-editor-tabs {
+.gspot-editor-tabs {
   display: flex;
   gap: 0.35rem;
   margin-bottom: 0.75rem;
   flex-wrap: wrap;
 }
-.mud-editor-tabs button {
+.gspot-editor-tabs button {
   padding: 0.45rem 0.85rem;
   border: 1px solid var(--border, #334155);
   background: var(--bg-card, #1e293b);
@@ -13,24 +13,24 @@
   cursor: pointer;
   font-size: 0.88rem;
 }
-.mud-editor-tabs button.is-active {
+.gspot-editor-tabs button.is-active {
   border-color: var(--accent, #6b21a8);
   background: color-mix(in srgb, var(--accent, #6b21a8) 18%, transparent);
 }
-.mud-editor-pane { display: none; }
-.mud-editor-pane.is-active { display: block; }
-.mud-editor-snippet-bar {
+.gspot-editor-pane { display: none; }
+.gspot-editor-pane.is-active { display: block; }
+.gspot-editor-snippet-bar {
   display: flex;
   flex-wrap: wrap;
   gap: 0.35rem;
   margin: 0 0 0.75rem;
 }
-.mud-editor-snippet-bar select,
-.mud-editor-snippet-bar button {
+.gspot-editor-snippet-bar select,
+.gspot-editor-snippet-bar button {
   font-size: 0.82rem;
   padding: 0.35rem 0.6rem;
 }
-.mud-source-editor {
+.gspot-source-editor {
   width: 100%;
   min-height: 320px;
   font-family: ui-monospace, monospace;
@@ -43,16 +43,16 @@
   color: #e2e8f0;
   box-sizing: border-box;
 }
-.mud-preview-frame {
+.gspot-preview-frame {
   width: 100%;
   min-height: 420px;
   border: 1px solid var(--border, #334155);
   border-radius: 8px;
   background: #fff;
 }
-.mud-quill-wrap { background: #fff; color: #111; border-radius: 8px; min-height: 320px; }
-.mud-quill-wrap .ql-editor { min-height: 280px; font-family: inherit; }
-.mud-editor-actions {
+.gspot-quill-wrap { background: #fff; color: #111; border-radius: 8px; min-height: 320px; }
+.gspot-quill-wrap .ql-editor { min-height: 280px; font-family: inherit; }
+.gspot-editor-actions {
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
