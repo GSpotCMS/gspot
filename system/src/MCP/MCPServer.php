@@ -859,6 +859,57 @@ class MCPServer
             return json_encode($analyzer->analyze($rows), JSON_PRETTY_PRINT);
         });
 
+        $this->registerTool('gspot_list_affiliates', [
+            'description' => 'List commerce affiliate codes and stats',
+            'inputSchema' => ['type' => 'object', 'properties' => []],
+        ], function (array $args): string {
+            $dir = $this->app->rootPath() . '/user/plugins/commerce/data/affiliates';
+            if (!is_dir($dir)) {
+                return 'Error: commerce plugin not installed.';
+            }
+            require_once $this->app->rootPath() . '/user/plugins/commerce/classes/AffiliateRegistry.php';
+            $list = (new \GSpot\UserPlugins\Commerce\AffiliateRegistry($dir))->all();
+
+            return json_encode($list, JSON_PRETTY_PRINT);
+        });
+
+        $this->registerTool('gspot_save_affiliate', [
+            'description' => 'Create or update an affiliate code',
+            'inputSchema' => [
+                'type' => 'object',
+                'properties' => [
+                    'code' => ['type' => 'string'],
+                    'name' => ['type' => 'string'],
+                    'commission_percent' => ['type' => 'number'],
+                    'active' => ['type' => 'boolean'],
+                ],
+                'required' => ['code'],
+            ],
+        ], function (array $args): string {
+            $dir = $this->app->rootPath() . '/user/plugins/commerce/data/affiliates';
+            require_once $this->app->rootPath() . '/user/plugins/commerce/classes/AffiliateRegistry.php';
+            $registry = new \GSpot\UserPlugins\Commerce\AffiliateRegistry($dir);
+            $code = $registry->normalizeCode((string) ($args['code'] ?? ''));
+            if ($code === '') {
+                return 'Error: Invalid code.';
+            }
+            $existing = $registry->get($code);
+            try {
+                $registry->save($code, [
+                    'name' => $args['name'] ?? $code,
+                    'commission_percent' => (float) ($args['commission_percent'] ?? 10),
+                    'active' => $args['active'] ?? true,
+                    'orders' => (int) ($existing['orders'] ?? 0),
+                    'revenue_cents' => (int) ($existing['revenue_cents'] ?? 0),
+                    'commission_owed_cents' => (int) ($existing['commission_owed_cents'] ?? 0),
+                ]);
+            } catch (\InvalidArgumentException $e) {
+                return 'Error: ' . $e->getMessage();
+            }
+
+            return "Affiliate '{$code}' saved.";
+        });
+
         $this->registerTool('gspot_list_mud_patterns', [
             'description' => 'List GSpot MUD HTML patterns (requires gspot-mud plugin)',
             'inputSchema' => ['type' => 'object', 'properties' => []],

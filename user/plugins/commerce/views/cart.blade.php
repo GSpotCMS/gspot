@@ -89,6 +89,18 @@
             </section>
         @endif
 
+        @if(!empty($affiliate_code))
+            <p class="commerce-note">Referred by affiliate <code>{{ $affiliate_code }}</code></p>
+        @endif
+
+        <section class="commerce-coupon">
+            <form method="POST" action="/commerce/cart/b2b" class="commerce-coupon-form">
+                <label>Company (B2B) <input name="company" value="{{ $b2b_company ?? '' }}"></label>
+                <label><input type="checkbox" name="request_invoice" value="1" @if(!empty($request_invoice)) checked @endif> Stripe invoice checkout</label>
+                <button type="submit">Save B2B options</button>
+            </form>
+        </section>
+
         <section class="commerce-coupon">
             <form method="POST" action="/commerce/cart/reminder-email" class="commerce-coupon-form">
                 <label>Email for receipt &amp; cart reminder

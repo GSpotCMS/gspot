@@ -33,7 +33,8 @@
     "scripts": {
         "serve": "php -S localhost:8080 -t public system/server.php",
         "test": "phpunit",
-        "lint": "php scripts/lint-php.php"
+        "lint": "php scripts/lint-php.php",
+        "smoke-install": "bash scripts/smoke-create-project.sh"
     },
     "config": {
         "optimize-autoloader": true,

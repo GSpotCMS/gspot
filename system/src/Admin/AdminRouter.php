@@ -149,6 +149,7 @@ class AdminRouter
             $this->route('GET', '/commerce/gift-cards', fn($r) => $this->commerceGiftCardsList($r));
             $this->route('GET', '/commerce/subscriptions', fn($r) => $this->commerceSubscriptionsList($r));
             $this->route('GET', '/commerce/bundles', fn($r) => $this->commerceBundlesList($r));
+            $this->route('GET', '/commerce/affiliates', fn($r) => $this->commerceAffiliatesList($r));
             $this->route('POST', '/commerce/orders/refund', fn($r) => $this->commerceOrderRefund($r));
         }
     }
@@ -988,6 +989,13 @@ HTML;
     {
         return new Response($this->render('commerce-admin', [
             'body' => $this->commerceAdmin()->bundlesListContent(),
+        ]));
+    }
+
+    private function commerceAffiliatesList(Request $request): Response
+    {
+        return new Response($this->render('commerce-admin', [
+            'body' => $this->commerceAdmin()->affiliatesListContent(),
         ]));
     }
 

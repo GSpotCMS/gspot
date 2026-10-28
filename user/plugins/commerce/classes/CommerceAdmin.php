@@ -184,6 +184,7 @@ HTML;
    <a class="btn" href="{$prefix}/commerce/gift-cards">Gift cards</a>
    <a class="btn" href="{$prefix}/commerce/subscriptions">Subscriptions</a>
    <a class="btn" href="{$prefix}/commerce/bundles">Bundles</a>
+   <a class="btn" href="{$prefix}/commerce/affiliates">Affiliates</a>
    <a class="btn" href="/commerce/shop" target="_blank" rel="noopener">View shop</a></p>
 <table class="admin-table">
   <thead><tr><th>Title</th><th>Slug</th><th>Price</th><th>Stock</th><th>Active</th><th></th></tr></thead>
@@ -350,6 +351,31 @@ HTML;
         require_once $this->app->rootPath() . '/user/plugins/commerce/classes/ProductRegistry.php';
 
         return new ProductRegistry($this->app->rootPath() . '/user/plugins/commerce/data/products');
+    }
+
+    public function affiliatesListContent(): string
+    {
+        $prefix = $this->adminPrefix();
+        require_once $this->app->rootPath() . '/user/plugins/commerce/classes/AffiliateRegistry.php';
+        $rows = '';
+        foreach ((new AffiliateRegistry($this->app->rootPath() . '/user/plugins/commerce/data/affiliates'))->all() as $a) {
+            $code = htmlspecialchars($a['code'] ?? '');
+            $name = htmlspecialchars($a['name'] ?? '');
+            $pct = (float) ($a['commission_percent'] ?? 0);
+            $owed = number_format(((int) ($a['commission_owed_cents'] ?? 0)) / 100, 2);
+            $orders = (int) ($a['orders'] ?? 0);
+            $rows .= "<tr><td><code>{$code}</code></td><td>{$name}</td><td>{$pct}%</td><td>{$orders}</td><td>AUD {$owed}</td></tr>";
+        }
+        if ($rows === '') {
+            $rows = '<tr><td colspan="5" class="empty">No affiliates</td></tr>';
+        }
+
+        return <<<HTML
+<h1>🛒 Affiliates</h1>
+<p><a class="btn" href="{$prefix}/commerce/products">← Products</a></p>
+<p>Share links like <code>/commerce/shop?ref=TEAMDC</code> · YAML in <code>data/affiliates/</code></p>
+<table class="admin-table"><thead><tr><th>Code</th><th>Name</th><th>Commission</th><th>Orders</th><th>Owed</th></tr></thead><tbody>{$rows}</tbody></table>
+HTML;
     }
 
     public function bundlesListContent(): string

@@ -11,6 +11,7 @@
     <a href="/">{{ $site['title'] }}</a>
     <nav>
         <a href="/commerce/shop">Shop</a>
+        <a href="/commerce/wishlist">Wishlist</a>
         <a href="/commerce/cart">Cart</a>
     </nav>
 </header>

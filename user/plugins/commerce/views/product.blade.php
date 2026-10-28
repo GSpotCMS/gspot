@@ -24,10 +24,14 @@
         $maxQty = $stock !== null ? min(99, max(1, $stock)) : 99;
     @endphp
     <p class="commerce-price">{{ strtoupper($cur) }} {{ number_format($price / 100, 2) }}</p>
-    @if($soldOut)
-        <p class="commerce-sold-out">Out of stock</p>
-    @else
-        <form method="POST" action="/commerce/cart/add">
+        <form method="POST" action="/commerce/wishlist/add" style="margin-bottom:0.75rem">
+            <input type="hidden" name="slug" value="{{ $product['slug'] ?? '' }}">
+            <button type="submit">Save to wishlist</button>
+        </form>
+        @if($soldOut)
+            <p class="commerce-sold-out">Out of stock</p>
+        @else
+            <form method="POST" action="/commerce/cart/add">
             <input type="hidden" name="slug" value="{{ $product['slug'] ?? '' }}">
             <label>Qty <input type="number" name="qty" value="1" min="1" max="{{ $maxQty }}"></label>
             <button type="submit">Add to cart</button>

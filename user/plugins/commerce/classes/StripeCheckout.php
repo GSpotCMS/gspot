@@ -36,6 +36,7 @@ final class StripeCheckout
         int $taxCents = 0,
         string $mode = 'payment',
         bool $automaticTax = false,
+        bool $invoiceCheckout = false,
     ): Session {
         if (!$this->isConfigured()) {
             throw new \RuntimeException('Stripe secret key not configured');
@@ -51,7 +52,7 @@ final class StripeCheckout
             $this->appendFeeLine($lineItems, $lines, $defaultCurrency, $taxCents, 'Tax', 'Regional tax');
         }
 
-        return Session::create($this->payload($lineItems, 'payment', $metadata, $automaticTax));
+        return Session::create($this->payload($lineItems, 'payment', $metadata, $automaticTax, $invoiceCheckout));
     }
 
     /**
@@ -72,7 +73,7 @@ final class StripeCheckout
             ];
         }
 
-        $payload = $this->payload($lineItems, 'subscription', $metadata, false);
+        $payload = $this->payload($lineItems, 'subscription', $metadata, false, false);
         unset($payload['allow_promotion_codes']);
 
         return Session::create($payload);
@@ -154,7 +155,7 @@ final class StripeCheckout
      * @param array{coupon?: string, cart?: string, tax_country?: string, reminder_email?: string, gift_card?: string, gift_cents?: int} $metadata
      * @return array<string, mixed>
      */
-    private function payload(array $lineItems, string $mode, array $metadata, bool $automaticTax): array
+    private function payload(array $lineItems, string $mode, array $metadata, bool $automaticTax, bool $invoiceCheckout): array
     {
         $meta = [];
         if (($metadata['coupon'] ?? '') !== '') {
@@ -173,6 +174,15 @@ final class StripeCheckout
             $meta['gspot_gift_card'] = substr((string) $metadata['gift_card'], 0, 32);
             $meta['gspot_gift_cents'] = (string) max(0, (int) ($metadata['gift_cents'] ?? 0));
         }
+        if (($metadata['affiliate'] ?? '') !== '') {
+            $meta['gspot_affiliate'] = substr((string) $metadata['affiliate'], 0, 32);
+        }
+        if (($metadata['b2b_company'] ?? '') !== '') {
+            $meta['gspot_b2b_company'] = substr((string) $metadata['b2b_company'], 0, 120);
+        }
+        if (!empty($metadata['b2b_invoice'])) {
+            $meta['gspot_b2b_invoice'] = '1';
+        }
 
         $payload = [
             'mode' => $mode,
@@ -187,6 +197,10 @@ final class StripeCheckout
         if ($automaticTax) {
             $payload['automatic_tax'] = ['enabled' => true];
             $payload['billing_address_collection'] = 'required';
+        }
+        if ($invoiceCheckout && $mode === 'payment') {
+            $payload['invoice_creation'] = ['enabled' => true];
+            $payload['customer_creation'] = 'always';
         }
 
         return $payload;

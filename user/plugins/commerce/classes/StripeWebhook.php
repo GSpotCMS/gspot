@@ -23,6 +23,7 @@ final class StripeWebhook
         private readonly ?AbandonedCartRegistry $abandoned = null,
         private readonly ?GiftCardRegistry $giftCards = null,
         private readonly ?SubscriptionRegistry $subscriptions = null,
+        private readonly ?AffiliateRegistry $affiliates = null,
     ) {
         if ($this->secretKey !== '') {
             Stripe::setApiKey($this->secretKey);
@@ -73,6 +74,8 @@ final class StripeWebhook
         $reminderEmail = (string) ($session->metadata->gspot_reminder_email ?? '');
         $giftCode = (string) ($session->metadata->gspot_gift_card ?? '');
         $giftCents = (int) ($session->metadata->gspot_gift_cents ?? 0);
+        $affiliateCode = (string) ($session->metadata->gspot_affiliate ?? '');
+        $b2bCompany = (string) ($session->metadata->gspot_b2b_company ?? '');
         $checkoutCurrency = strtolower((string) ($session->currency ?? 'aud'));
 
         $order = [
@@ -85,6 +88,8 @@ final class StripeWebhook
             'coupon' => $coupon,
             'gift_card' => $giftCode,
             'gift_redeemed_cents' => $giftCents,
+            'affiliate' => $affiliateCode,
+            'b2b_company' => $b2bCompany,
             'tax_country' => $taxCountry,
             'cart_snapshot' => $cartJson,
             'billing_mode' => (string) ($session->mode ?? 'payment'),
@@ -101,6 +106,15 @@ final class StripeWebhook
 
         if ($this->digital !== null && $cartJson !== '') {
             $order['downloads'] = $this->digital->grantForCart($id, $cartJson);
+        }
+
+        if ($affiliateCode !== '' && $this->affiliates !== null) {
+            $affiliate = $this->affiliates->resolveActive($affiliateCode);
+            if ($affiliate !== null) {
+                $commission = $this->affiliates->commissionCents((int) ($order['amount_total'] ?? 0), $affiliate);
+                $order['affiliate_commission_cents'] = $commission;
+                $this->affiliates->recordSale($affiliateCode, (int) ($order['amount_total'] ?? 0), $commission);
+            }
         }
 
         $this->orders->save($id, $order);

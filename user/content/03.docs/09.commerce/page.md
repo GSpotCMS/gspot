@@ -99,6 +99,26 @@ Each product has a `currency` field. Carts with mixed currencies cannot checkout
 
 Webhooks track `customer.subscription.*` and `invoice.paid` / `invoice.payment_failed` into `data/subscriptions/`. View in **Admin → Commerce → Subscriptions**.
 
+## Wishlist
+
+Session wishlist at `/commerce/wishlist` · save from product pages · move all to cart.
+
+## Affiliates
+
+`?ref=TEAMDC` on shop URLs · commission tracked on paid orders · **Admin → Affiliates**.
+
+## B2B invoice checkout
+
+On the cart, enter company name and enable **Stripe invoice checkout** for `invoice_creation` on Checkout (payment mode).
+
+## Install smoke
+
+```bash
+composer smoke-install
+```
+
+CI runs the same layout check (Packagist-ready `composer install` in a clean copy).
+
 ## Bundles
 
 YAML bundles in `data/bundles/` (demo `spot-starter`). Shop grid and `[commerce-bundle slug="spot-starter"]`.

@@ -41,6 +41,8 @@ class CommercePlugin extends AbstractPlugin
         require_once __DIR__ . '/classes/StripeCustomerPortal.php';
         require_once __DIR__ . '/classes/CheckoutSmokeTest.php';
         require_once __DIR__ . '/classes/CommerceCheckoutAnalyzer.php';
+        require_once __DIR__ . '/classes/Wishlist.php';
+        require_once __DIR__ . '/classes/AffiliateRegistry.php';
 
         $this->app->renderer()->addViewPath(__DIR__ . '/views');
         $this->app->renderer()->share('commerceCss', '/plugin-assets/commerce/css/shop.css');
@@ -123,7 +125,12 @@ HTML;
             $path === '/commerce/cart/reminder-email' && $request->isMethod('POST') => $this->cartReminderEmail($request),
             $path === '/commerce/cart/gift-card' && $request->isMethod('POST') => $this->cartGiftCard($request),
             $path === '/commerce/cart/gift-card/remove' && $request->isMethod('POST') => $this->cartGiftCardRemove($request),
+            $path === '/commerce/cart/b2b' && $request->isMethod('POST') => $this->cartB2b($request),
             $path === '/commerce/cron/abandoned' => $this->cronAbandoned($request),
+            $path === '/commerce/wishlist' => $this->wishlistPage($request),
+            $path === '/commerce/wishlist/add' && $request->isMethod('POST') => $this->wishlistAdd($request),
+            $path === '/commerce/wishlist/remove' && $request->isMethod('POST') => $this->wishlistRemove($request),
+            $path === '/commerce/wishlist/to-cart' && $request->isMethod('POST') => $this->wishlistToCart($request),
             $path === '/commerce/success' => $this->success($request),
             $path === '/commerce/webhook/stripe' && $request->isMethod('POST') => $this->stripeWebhook($request),
             str_starts_with($path, '/commerce/product/') => $this->product($path),
@@ -159,6 +166,8 @@ HTML;
 
     private function shop(Request $request): Response
     {
+        $this->captureAffiliateQuery($request);
+
         return new Response($this->renderView('shop', [
             'products' => $this->registry()->all(),
             'bundles' => $this->bundles()->all(),
@@ -182,6 +191,8 @@ HTML;
 
     private function cartPage(Request $request): Response
     {
+        $this->captureAffiliateQuery($request);
+
         return new Response($this->renderView('cart', $this->cartViewData()));
     }
 
@@ -345,6 +356,7 @@ HTML;
             }
 
             $reminderEmail = $this->cart()->reminderEmail();
+            $affiliate = $this->resolveAffiliateCode();
             $session = $this->stripe()->createSession(
                 $lines,
                 $currency !== '' ? $currency : $this->defaultCurrency(),
@@ -355,11 +367,15 @@ HTML;
                     'reminder_email' => $reminderEmail,
                     'gift_card' => (string) ($giftCard['code'] ?? ''),
                     'gift_cents' => $giftRed,
+                    'affiliate' => $affiliate,
+                    'b2b_company' => $this->cart()->b2bCompany(),
+                    'b2b_invoice' => $this->cart()->requestInvoice(),
                 ],
                 $ship,
                 $tax,
                 $mode,
                 $autoTax,
+                $mode === 'payment' && $this->cart()->requestInvoice(),
             );
             $this->cart()->clearCheckoutSession();
             if ($reminderEmail !== '') {
@@ -427,6 +443,7 @@ HTML;
                 $this->abandonedCarts(),
                 $this->giftCards(),
                 $this->subscriptions(),
+                $this->affiliates(),
             );
             $handler->handle($request->getContent(), $request->headers->get('Stripe-Signature'));
 
@@ -500,6 +517,86 @@ HTML;
         $rel = (string) ($this->config['config']['bundles_path'] ?? 'data/bundles');
 
         return new BundleRegistry(__DIR__ . '/' . ltrim($rel, '/'), $this->registry());
+    }
+
+    private function wishlist(): Wishlist
+    {
+        return new Wishlist($this->registry());
+    }
+
+    private function affiliates(): AffiliateRegistry
+    {
+        $rel = (string) ($this->config['config']['affiliates_path'] ?? 'data/affiliates');
+
+        return new AffiliateRegistry(__DIR__ . '/' . ltrim($rel, '/'));
+    }
+
+    private function captureAffiliateQuery(Request $request): void
+    {
+        $ref = (string) $request->query->get('ref', '');
+        if ($ref === '') {
+            return;
+        }
+
+        $code = $this->affiliates()->normalizeCode($ref);
+        if ($code !== '' && $this->affiliates()->resolveActive($code) !== null) {
+            $this->cart()->setAffiliateCode($code);
+        }
+    }
+
+    private function resolveAffiliateCode(): string
+    {
+        $code = $this->cart()->affiliateCode();
+        if ($code === '') {
+            return '';
+        }
+
+        return $this->affiliates()->resolveActive($code) !== null ? $code : '';
+    }
+
+    private function wishlistPage(Request $request): Response
+    {
+        $this->captureAffiliateQuery($request);
+
+        return new Response($this->renderView('wishlist', [
+            'products' => $this->wishlist()->products(),
+            'site' => $this->siteData(),
+        ]));
+    }
+
+    private function wishlistAdd(Request $request): Response
+    {
+        $this->wishlist()->add((string) $request->request->get('slug', ''));
+        $redirect = (string) $request->request->get('redirect', '/commerce/wishlist');
+
+        return new RedirectResponse($redirect);
+    }
+
+    private function wishlistRemove(Request $request): Response
+    {
+        $this->wishlist()->remove((string) $request->request->get('slug', ''));
+
+        return new RedirectResponse('/commerce/wishlist');
+    }
+
+    private function wishlistToCart(Request $request): Response
+    {
+        foreach ($this->wishlist()->slugs() as $slug) {
+            $this->cart()->add($slug, 1);
+        }
+        $this->wishlist()->clear();
+
+        return new RedirectResponse('/commerce/cart');
+    }
+
+    private function cartB2b(Request $request): Response
+    {
+        $this->cart()->setB2b(
+            (string) $request->request->get('company', ''),
+            $request->request->has('request_invoice'),
+        );
+
+        return new RedirectResponse('/commerce/cart');
     }
 
     private function downloadGrants(): DownloadGrantRegistry
@@ -578,6 +675,9 @@ HTML;
             'total_cents' => $currency !== '' ? $this->cart()->totalCents($flatShip, $tax, $currency) : 0,
             'coupon' => $this->cart()->appliedCoupon(),
             'reminder_email' => $this->cart()->reminderEmail(),
+            'affiliate_code' => $this->resolveAffiliateCode(),
+            'b2b_company' => $this->cart()->b2bCompany(),
+            'request_invoice' => $this->cart()->requestInvoice(),
             'checkout_mode' => $mode,
             'stripe_ready' => $this->stripe()->isConfigured(),
             'site' => $this->siteData(),

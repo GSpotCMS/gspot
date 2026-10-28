@@ -14,6 +14,9 @@ final class Cart
     private const TAX_COUNTRY_KEY = 'gspot_commerce_tax_country';
     private const REMINDER_EMAIL_KEY = 'gspot_commerce_reminder_email';
     private const GIFT_CARD_KEY = 'gspot_commerce_gift_card';
+    private const AFFILIATE_KEY = 'gspot_commerce_affiliate';
+    private const B2B_COMPANY_KEY = 'gspot_commerce_b2b_company';
+    private const B2B_INVOICE_KEY = 'gspot_commerce_b2b_invoice';
 
     public function __construct(
         private readonly ProductRegistry $products,
@@ -310,6 +313,40 @@ final class Cart
     {
         SessionGuard::start();
         unset($_SESSION[self::SESSION_KEY], $_SESSION[self::COUPON_KEY], $_SESSION[self::GIFT_CARD_KEY]);
+    }
+
+    public function setAffiliateCode(string $code): void
+    {
+        SessionGuard::start();
+        $_SESSION[self::AFFILIATE_KEY] = strtoupper(trim($code));
+    }
+
+    public function affiliateCode(): string
+    {
+        SessionGuard::start();
+
+        return (string) ($_SESSION[self::AFFILIATE_KEY] ?? '');
+    }
+
+    public function setB2b(string $company, bool $requestInvoice): void
+    {
+        SessionGuard::start();
+        $_SESSION[self::B2B_COMPANY_KEY] = trim($company);
+        $_SESSION[self::B2B_INVOICE_KEY] = $requestInvoice;
+    }
+
+    public function b2bCompany(): string
+    {
+        SessionGuard::start();
+
+        return (string) ($_SESSION[self::B2B_COMPANY_KEY] ?? '');
+    }
+
+    public function requestInvoice(): bool
+    {
+        SessionGuard::start();
+
+        return (bool) ($_SESSION[self::B2B_INVOICE_KEY] ?? false);
     }
 
     /** @return list<array{product: array<string, mixed>, qty: int, line_cents: int}> */

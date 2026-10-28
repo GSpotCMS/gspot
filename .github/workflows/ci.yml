@@ -18,3 +18,4 @@ jobs:
       - run: composer lint
       - run: composer test
       - run: composer audit
+      - run: bash scripts/smoke-create-project.sh
