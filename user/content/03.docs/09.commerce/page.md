@@ -57,6 +57,28 @@ Configure `flat_shipping_cents` in the commerce plugin config. Applied when any 
 
 Paid orders write a plain-text receipt to `data/receipts/`. Set `COMMERCE_NOTIFY_EMAIL` to also `mail()` the shop owner.
 
+## Tax regions
+
+Edit `user/plugins/commerce/data/tax/regions.yaml`. Shoppers pick a region on the cart; tax is added as a Checkout line item (one-time carts only).
+
+## Buyer receipts
+
+Set `COMMERCE_BUYER_RECEIPTS=1` (default). After webhook, customers with a valid email get a plain-text receipt (including download links when present).
+
+## Subscriptions
+
+Products with `billing_type: subscription` require a Stripe **recurring** Price ID. Subscription carts cannot mix with one-time SKUs. Demo SKU: `team-dc-pro` (inactive until configured).
+
+## Abandoned cart
+
+Shoppers can save an email on the cart. A cron URL sends one reminder after idle time:
+
+```bash
+curl "http://localhost:8080/commerce/cron/abandoned?key=YOUR_COMMERCE_CRON_KEY"
+```
+
+Schedule that hourly on your host. Paid orders clear the abandoned record.
+
 ## Admin
 
 **Admin → Commerce** manages products, **Coupons**, and **Orders**.

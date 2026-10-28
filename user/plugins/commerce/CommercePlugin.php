@@ -29,6 +29,11 @@ class CommercePlugin extends AbstractPlugin
         require_once __DIR__ . '/classes/OrderReceiptNotifier.php';
         require_once __DIR__ . '/classes/DownloadGrantRegistry.php';
         require_once __DIR__ . '/classes/DigitalFulfillment.php';
+        require_once __DIR__ . '/classes/TaxRegionRegistry.php';
+        require_once __DIR__ . '/classes/TaxCalculator.php';
+        require_once __DIR__ . '/classes/BuyerReceiptMailer.php';
+        require_once __DIR__ . '/classes/AbandonedCartRegistry.php';
+        require_once __DIR__ . '/classes/AbandonedCartReminder.php';
 
         $this->app->renderer()->addViewPath(__DIR__ . '/views');
         $this->app->renderer()->share('commerceCss', '/plugin-assets/commerce/css/shop.css');
@@ -83,6 +88,9 @@ HTML;
             $path === '/commerce/cart/update' && $request->isMethod('POST') => $this->cartUpdate($request),
             $path === '/commerce/cart/coupon' && $request->isMethod('POST') => $this->cartCoupon($request),
             $path === '/commerce/cart/coupon/remove' && $request->isMethod('POST') => $this->cartCouponRemove($request),
+            $path === '/commerce/cart/tax-country' && $request->isMethod('POST') => $this->cartTaxCountry($request),
+            $path === '/commerce/cart/reminder-email' && $request->isMethod('POST') => $this->cartReminderEmail($request),
+            $path === '/commerce/cron/abandoned' => $this->cronAbandoned($request),
             $path === '/commerce/success' => $this->success($request),
             $path === '/commerce/webhook/stripe' && $request->isMethod('POST') => $this->stripeWebhook($request),
             str_starts_with($path, '/commerce/product/') => $this->product($path),
@@ -135,19 +143,7 @@ HTML;
 
     private function cartPage(Request $request): Response
     {
-        $coupon = $this->cart()->appliedCoupon();
-        $flatShip = $this->flatShippingCents();
-
-        return new Response($this->renderView('cart', [
-            'lines' => $this->cart()->lines(),
-            'subtotal_cents' => $this->cart()->subtotalCents(),
-            'discount_cents' => $this->cart()->discountCents(),
-            'shipping_cents' => $this->cart()->shippingCents($flatShip),
-            'total_cents' => $this->cart()->totalCents($flatShip),
-            'coupon' => $coupon,
-            'stripe_ready' => $this->stripe()->isConfigured(),
-            'site' => $this->siteData(),
-        ]));
+        return new Response($this->renderView('cart', $this->cartViewData()));
     }
 
     private function cartAdd(Request $request): Response
@@ -172,6 +168,8 @@ HTML;
             $this->cart()->update((string) $slug, (int) $qty);
         }
 
+        $this->syncAbandonedCart();
+
         return new RedirectResponse('/commerce/cart');
     }
 
@@ -179,19 +177,7 @@ HTML;
     {
         $error = $this->cart()->applyCoupon((string) $request->request->get('code', ''));
         if ($error !== null) {
-            $flatShip = $this->flatShippingCents();
-
-            return new Response($this->renderView('cart', [
-                'lines' => $this->cart()->lines(),
-                'subtotal_cents' => $this->cart()->subtotalCents(),
-                'discount_cents' => $this->cart()->discountCents(),
-                'shipping_cents' => $this->cart()->shippingCents($flatShip),
-                'total_cents' => $this->cart()->totalCents($flatShip),
-                'coupon' => $this->cart()->appliedCoupon(),
-                'stripe_ready' => $this->stripe()->isConfigured(),
-                'error' => $error,
-                'site' => $this->siteData(),
-            ]), 422);
+            return new Response($this->renderView('cart', $this->cartViewData($error)), 422);
         }
 
         return new RedirectResponse('/commerce/cart');
@@ -204,6 +190,33 @@ HTML;
         return new RedirectResponse('/commerce/cart');
     }
 
+    private function cartTaxCountry(Request $request): Response
+    {
+        $this->cart()->setTaxCountry((string) $request->request->get('country', 'AU'));
+
+        return new RedirectResponse('/commerce/cart');
+    }
+
+    private function cartReminderEmail(Request $request): Response
+    {
+        $this->cart()->setReminderEmail((string) $request->request->get('email', ''));
+        $this->syncAbandonedCart();
+
+        return new RedirectResponse('/commerce/cart');
+    }
+
+    private function cronAbandoned(Request $request): Response
+    {
+        if (!$this->cronAuthorized($request)) {
+            return new Response('Forbidden', 403);
+        }
+
+        $idle = max(15, (int) ($this->config['config']['abandoned_idle_minutes'] ?? 60));
+        $result = $this->abandonedReminder()->run($idle);
+
+        return new Response(json_encode($result), 200, ['Content-Type' => 'application/json']);
+    }
+
     private function checkout(Request $request): Response
     {
         if ($this->cart()->isEmpty()) {
@@ -211,26 +224,47 @@ HTML;
         }
 
         try {
+            $modeError = $this->cart()->validateCheckoutMode();
+            if ($modeError !== null) {
+                throw new \RuntimeException($modeError);
+            }
+
             $cartSnap = json_encode($this->cart()->snapshotForOrder()) ?: '[]';
             $coupon = $this->cart()->appliedCoupon();
             $discount = $this->cart()->discountCents();
             $lines = $this->cart()->lines();
-            if ($discount > 0) {
+            if ($discount > 0 && $this->cart()->checkoutMode() === 'payment') {
                 $lines = (new DiscountCalculator())->applyToLines($lines, $discount);
             }
 
             $flatShip = $this->flatShippingCents();
+            $mode = $this->cart()->checkoutMode();
+            $ship = $mode === 'payment' ? $this->cart()->shippingCents($flatShip) : 0;
+            $tax = 0;
+            if ($mode === 'payment') {
+                $rate = $this->taxRegions()->rateFor($this->cart()->taxCountry());
+                $tax = (new TaxCalculator())->taxCents($this->cart()->taxableCents($flatShip), $rate);
+            }
+
+            $reminderEmail = $this->cart()->reminderEmail();
             $session = $this->stripe()->createSession(
                 $lines,
                 $this->defaultCurrency(),
                 [
                     'coupon' => (string) ($coupon['code'] ?? ''),
                     'cart' => $cartSnap,
+                    'tax_country' => $this->cart()->taxCountry(),
+                    'reminder_email' => $reminderEmail,
                 ],
-                $this->cart()->shippingCents($flatShip),
+                $ship,
+                $tax,
+                $mode,
             );
             $this->cart()->clear();
             $this->cart()->removeCoupon();
+            if ($reminderEmail !== '') {
+                $this->abandonedCarts()->deleteByEmail($reminderEmail);
+            }
 
             $url = $session->url ?? '';
             if ($url === '') {
@@ -239,19 +273,7 @@ HTML;
 
             return new RedirectResponse($url);
         } catch (\Throwable $e) {
-            $flatShip = $this->flatShippingCents();
-
-            return new Response($this->renderView('cart', [
-                'lines' => $this->cart()->lines(),
-                'subtotal_cents' => $this->cart()->subtotalCents(),
-                'discount_cents' => $this->cart()->discountCents(),
-                'shipping_cents' => $this->cart()->shippingCents($flatShip),
-                'total_cents' => $this->cart()->totalCents($flatShip),
-                'coupon' => $this->cart()->appliedCoupon(),
-                'stripe_ready' => $this->stripe()->isConfigured(),
-                'error' => $e->getMessage(),
-                'site' => $this->siteData(),
-            ]), 502);
+            return new Response($this->renderView('cart', $this->cartViewData($e->getMessage())), 502);
         }
     }
 
@@ -301,6 +323,8 @@ HTML;
                 $this->coupons(),
                 $this->receiptNotifier(),
                 $this->digitalFulfillment(),
+                $this->buyerReceiptMailer(),
+                $this->abandonedCarts(),
             );
             $handler->handle($request->getContent(), $request->headers->get('Stripe-Signature'));
 
@@ -391,6 +415,97 @@ HTML;
         $rel = (string) ($this->config['config']['receipts_path'] ?? 'data/receipts');
 
         return __DIR__ . '/' . ltrim($rel, '/');
+    }
+
+    /** @return array<string, mixed> */
+    private function cartViewData(?string $error = null): array
+    {
+        $flatShip = $this->flatShippingCents();
+        $mode = $this->cart()->checkoutMode();
+        $rate = $this->taxRegions()->rateFor($this->cart()->taxCountry());
+        $tax = $mode === 'payment'
+            ? (new TaxCalculator())->taxCents($this->cart()->taxableCents($flatShip), $rate)
+            : 0;
+
+        $data = [
+            'lines' => $this->cart()->lines(),
+            'subtotal_cents' => $this->cart()->subtotalCents(),
+            'discount_cents' => $this->cart()->discountCents(),
+            'shipping_cents' => $mode === 'payment' ? $this->cart()->shippingCents($flatShip) : 0,
+            'tax_cents' => $tax,
+            'tax_rate' => $rate,
+            'tax_country' => $this->cart()->taxCountry(),
+            'tax_regions' => $this->taxRegions()->countryOptions(),
+            'total_cents' => $this->cart()->totalCents($flatShip, $tax),
+            'coupon' => $this->cart()->appliedCoupon(),
+            'reminder_email' => $this->cart()->reminderEmail(),
+            'checkout_mode' => $mode,
+            'stripe_ready' => $this->stripe()->isConfigured(),
+            'site' => $this->siteData(),
+        ];
+        if ($error !== null) {
+            $data['error'] = $error;
+        }
+
+        return $data;
+    }
+
+    private function syncAbandonedCart(): void
+    {
+        $email = $this->cart()->reminderEmail();
+        if ($email === '' || $this->cart()->isEmpty()) {
+            return;
+        }
+
+        $this->abandonedCarts()->upsert($email, $this->cart()->snapshotForOrder());
+    }
+
+    private function cronAuthorized(Request $request): bool
+    {
+        $env = (string) ($this->config['config']['cron_key_env'] ?? 'COMMERCE_CRON_KEY');
+        $expected = trim((string) (getenv($env) ?: ($_ENV[$env] ?? '')));
+        if ($expected === '') {
+            return false;
+        }
+
+        return hash_equals($expected, (string) $request->query->get('key', ''));
+    }
+
+    private function taxRegions(): TaxRegionRegistry
+    {
+        $rel = (string) ($this->config['config']['tax_regions_path'] ?? 'data/tax/regions.yaml');
+
+        return new TaxRegionRegistry(__DIR__ . '/' . ltrim($rel, '/'));
+    }
+
+    private function abandonedCarts(): AbandonedCartRegistry
+    {
+        $rel = (string) ($this->config['config']['abandoned_path'] ?? 'data/abandoned');
+
+        return new AbandonedCartRegistry(__DIR__ . '/' . ltrim($rel, '/'));
+    }
+
+    private function abandonedReminder(): AbandonedCartReminder
+    {
+        $base = rtrim((string) $this->app->config()->get('site.url', 'http://localhost:8080'), '/');
+
+        return new AbandonedCartReminder(
+            $this->abandonedCarts(),
+            $this->registry(),
+            $base,
+            (string) $this->app->config()->get('site.title', 'GSpot Shop'),
+        );
+    }
+
+    private function buyerReceiptMailer(): BuyerReceiptMailer
+    {
+        $env = (string) ($this->config['config']['buyer_receipts_env'] ?? 'COMMERCE_BUYER_RECEIPTS');
+        $flag = strtolower(trim((string) (getenv($env) ?: ($_ENV[$env] ?? '1'))));
+
+        return new BuyerReceiptMailer(
+            (string) $this->app->config()->get('site.title', 'GSpot Shop'),
+            in_array($flag, ['1', 'true', 'yes', 'on'], true),
+        );
     }
 
     private function receiptNotifier(): OrderReceiptNotifier

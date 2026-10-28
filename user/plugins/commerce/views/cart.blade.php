@@ -54,16 +54,55 @@
             @endif
         </section>
 
+        @if(($checkout_mode ?? 'payment') === 'payment')
+            <section class="commerce-coupon">
+                <form method="POST" action="/commerce/cart/tax-country" class="commerce-coupon-form">
+                    <label>Tax region
+                        <select name="country">
+                            @foreach($tax_regions ?? [] as $region)
+                                <option value="{{ $region['code'] }}" @if(($tax_country ?? 'AU') === $region['code']) selected @endif>
+                                    {{ $region['code'] }} ({{ $region['rate'] }}%)
+                                </option>
+                            @endforeach
+                        </select>
+                    </label>
+                    <button type="submit">Update tax</button>
+                </form>
+            </section>
+        @endif
+
+        <section class="commerce-coupon">
+            <form method="POST" action="/commerce/cart/reminder-email" class="commerce-coupon-form">
+                <label>Email for receipt &amp; cart reminder
+                    <input type="email" name="email" value="{{ $reminder_email ?? '' }}" placeholder="you@example.com">
+                </label>
+                <button type="submit">Save</button>
+            </form>
+        </section>
+
         @if(!empty($shipping_cents))
             <p class="commerce-subtotal"><strong>Shipping:</strong> {{ number_format($shipping_cents / 100, 2) }}</p>
+        @endif
+        @if(!empty($tax_cents))
+            <p class="commerce-subtotal"><strong>Tax ({{ $tax_country ?? 'AU' }} {{ $tax_rate ?? 0 }}%):</strong> {{ number_format($tax_cents / 100, 2) }}</p>
         @endif
         <p class="commerce-total"><strong>Total:</strong> {{ number_format(($total_cents ?? $subtotal_cents) / 100, 2) }}</p>
 
         @if($stripe_ready)
             <form method="POST" action="/commerce/checkout" style="margin-top:1rem">
-                <button type="submit" class="commerce-checkout">Checkout with Stripe</button>
+                <button type="submit" class="commerce-checkout">
+                    @if(($checkout_mode ?? 'payment') === 'subscription')
+                        Subscribe with Stripe
+                    @else
+                        Checkout with Stripe
+                    @endif
+                </button>
             </form>
-            <p class="commerce-note">Stripe promotion codes also work at checkout.</p>
+            @if(($checkout_mode ?? 'payment') === 'subscription')
+                <p class="commerce-note">Subscription checkout uses Stripe recurring Price IDs.</p>
+            @else
+                <p class="commerce-note">Stripe promotion codes also work at checkout.</p>
+            @endif
         @else
             <p class="commerce-note">Set <code>STRIPE_SECRET_KEY</code> in your environment to enable checkout.</p>
         @endif

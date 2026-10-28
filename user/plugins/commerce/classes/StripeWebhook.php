@@ -19,6 +19,8 @@ final class StripeWebhook
         private readonly ?CouponRegistry $coupons = null,
         private readonly ?OrderReceiptNotifier $notifier = null,
         private readonly ?DigitalFulfillment $digital = null,
+        private readonly ?BuyerReceiptMailer $buyerMailer = null,
+        private readonly ?AbandonedCartRegistry $abandoned = null,
     ) {
         if ($this->secretKey !== '') {
             Stripe::setApiKey($this->secretKey);
@@ -61,6 +63,8 @@ final class StripeWebhook
 
         $coupon = (string) ($session->metadata->gspot_coupon ?? '');
         $cartJson = (string) ($session->metadata->gspot_cart ?? '');
+        $taxCountry = (string) ($session->metadata->gspot_tax_country ?? '');
+        $reminderEmail = (string) ($session->metadata->gspot_reminder_email ?? '');
 
         $order = [
             'status' => 'paid',
@@ -70,7 +74,9 @@ final class StripeWebhook
             'payment_status' => (string) ($session->payment_status ?? ''),
             'line_items' => $lines,
             'coupon' => $coupon,
+            'tax_country' => $taxCountry,
             'cart_snapshot' => $cartJson,
+            'billing_mode' => (string) ($session->mode ?? 'payment'),
             'created' => date('c', (int) ($session->created ?? time())),
         ];
 
@@ -84,6 +90,12 @@ final class StripeWebhook
             $this->coupons->incrementUses($coupon);
         }
         $this->notifier?->notify($id, $order);
+        $this->buyerMailer?->send($id, $order);
+
+        $clearEmail = $reminderEmail !== '' ? $reminderEmail : (string) ($order['email'] ?? '');
+        if ($clearEmail !== '' && $this->abandoned !== null) {
+            $this->abandoned->deleteByEmail($clearEmail);
+        }
     }
 
     private function fulfillInventory(string $cartJson): void

@@ -11,6 +11,8 @@ final class Cart
 {
     private const SESSION_KEY = 'gspot_commerce_cart';
     private const COUPON_KEY = 'gspot_commerce_coupon';
+    private const TAX_COUNTRY_KEY = 'gspot_commerce_tax_country';
+    private const REMINDER_EMAIL_KEY = 'gspot_commerce_reminder_email';
 
     public function __construct(
         private readonly ProductRegistry $products,
@@ -124,9 +126,80 @@ final class Cart
         return 0;
     }
 
-    public function totalCents(int $flatShippingCents = 0): int
+    public function taxableCents(int $flatShippingCents): int
     {
         return max(0, $this->subtotalCents() - $this->discountCents() + $this->shippingCents($flatShippingCents));
+    }
+
+    public function totalCents(int $flatShippingCents = 0, int $taxCents = 0): int
+    {
+        return max(0, $this->taxableCents($flatShippingCents) + max(0, $taxCents));
+    }
+
+    public function setTaxCountry(string $countryCode): void
+    {
+        SessionGuard::start();
+        $code = strtoupper(preg_replace('/[^A-Z]/', '', strtoupper($countryCode)) ?? '');
+        $_SESSION[self::TAX_COUNTRY_KEY] = $code !== '' ? $code : 'AU';
+    }
+
+    public function taxCountry(): string
+    {
+        SessionGuard::start();
+        $code = (string) ($_SESSION[self::TAX_COUNTRY_KEY] ?? '');
+
+        return $code !== '' ? $code : 'AU';
+    }
+
+    public function setReminderEmail(string $email): void
+    {
+        SessionGuard::start();
+        $_SESSION[self::REMINDER_EMAIL_KEY] = strtolower(trim($email));
+    }
+
+    public function reminderEmail(): string
+    {
+        SessionGuard::start();
+
+        return (string) ($_SESSION[self::REMINDER_EMAIL_KEY] ?? '');
+    }
+
+    /** @return 'payment'|'subscription' */
+    public function checkoutMode(): string
+    {
+        $hasSub = false;
+        $hasOne = false;
+        foreach ($this->lines() as $line) {
+            if (($line['product']['billing_type'] ?? 'one_time') === 'subscription') {
+                $hasSub = true;
+            } else {
+                $hasOne = true;
+            }
+        }
+
+        return $hasSub && !$hasOne ? 'subscription' : 'payment';
+    }
+
+    public function validateCheckoutMode(): ?string
+    {
+        $hasSub = false;
+        $hasOne = false;
+        foreach ($this->lines() as $line) {
+            if (($line['product']['billing_type'] ?? 'one_time') === 'subscription') {
+                $hasSub = true;
+                if (trim((string) ($line['product']['stripe_price_id'] ?? '')) === '') {
+                    return 'Subscription product missing Stripe Price ID: ' . ($line['product']['slug'] ?? '');
+                }
+            } else {
+                $hasOne = true;
+            }
+        }
+
+        if ($hasSub && $hasOne) {
+            return 'Mixed one-time and subscription items are not supported in one checkout.';
+        }
+
+        return null;
     }
 
     /** @return list<array{slug: string, qty: int}> */

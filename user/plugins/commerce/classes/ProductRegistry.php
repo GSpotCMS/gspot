@@ -79,6 +79,7 @@ final class ProductRegistry
             'stock' => $this->normalizeStock($meta['stock'] ?? null),
             'download_file' => (string) ($meta['download_file'] ?? ''),
             'ship_required' => (bool) ($meta['ship_required'] ?? true),
+            'billing_type' => $this->normalizeBillingType($meta['billing_type'] ?? 'one_time'),
             'updated' => date('c'),
         ];
 
@@ -186,6 +187,13 @@ final class ProductRegistry
         $meta['slug'] = $meta['slug'] ?? basename($dir);
 
         return $meta;
+    }
+
+    private function normalizeBillingType(mixed $type): string
+    {
+        $type = strtolower((string) $type);
+
+        return $type === 'subscription' ? 'subscription' : 'one_time';
     }
 
     private function normalizeStock(mixed $stock): ?int

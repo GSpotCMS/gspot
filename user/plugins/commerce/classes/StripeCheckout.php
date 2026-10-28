@@ -26,14 +26,61 @@ final class StripeCheckout
 
     /**
      * @param list<array{product: array<string, mixed>, qty: int}> $lines
-     * @param array{coupon?: string, cart?: string} $metadata
+     * @param array{coupon?: string, cart?: string, tax_country?: string, reminder_email?: string} $metadata
      */
-    public function createSession(array $lines, string $defaultCurrency, array $metadata = [], int $shippingCents = 0): Session
-    {
+    public function createSession(
+        array $lines,
+        string $defaultCurrency,
+        array $metadata = [],
+        int $shippingCents = 0,
+        int $taxCents = 0,
+        string $mode = 'payment',
+    ): Session {
         if (!$this->isConfigured()) {
             throw new \RuntimeException('Stripe secret key not configured');
         }
 
+        if ($mode === 'subscription') {
+            return $this->createSubscriptionSession($lines, $defaultCurrency, $metadata);
+        }
+
+        $lineItems = $this->buildPaymentLineItems($lines, $defaultCurrency);
+        $this->appendFeeLine($lineItems, $lines, $defaultCurrency, $shippingCents, 'Shipping', 'Flat-rate shipping');
+        $this->appendFeeLine($lineItems, $lines, $defaultCurrency, $taxCents, 'Tax', 'Regional tax');
+
+        return Session::create($this->payload($lineItems, 'payment', $metadata));
+    }
+
+    /**
+     * @param list<array{product: array<string, mixed>, qty: int}> $lines
+     * @param array{coupon?: string, cart?: string, tax_country?: string, reminder_email?: string} $metadata
+     */
+    private function createSubscriptionSession(array $lines, string $defaultCurrency, array $metadata): Session
+    {
+        $lineItems = [];
+        foreach ($lines as $line) {
+            $priceId = trim((string) ($line['product']['stripe_price_id'] ?? ''));
+            if ($priceId === '') {
+                throw new \RuntimeException('Subscription checkout requires Stripe Price ID');
+            }
+            $lineItems[] = [
+                'price' => $priceId,
+                'quantity' => max(1, (int) $line['qty']),
+            ];
+        }
+
+        $payload = $this->payload($lineItems, 'subscription', $metadata);
+        unset($payload['allow_promotion_codes']);
+
+        return Session::create($payload);
+    }
+
+    /**
+     * @param list<array{product: array<string, mixed>, qty: int}> $lines
+     * @return list<array<string, mixed>>
+     */
+    private function buildPaymentLineItems(array $lines, string $defaultCurrency): array
+    {
         $lineItems = [];
         foreach ($lines as $line) {
             $product = $line['product'];
@@ -62,24 +109,50 @@ final class StripeCheckout
             ];
         }
 
-        if ($shippingCents > 0 && $lineItems !== []) {
-            $currency = strtolower($defaultCurrency);
-            if ($lineItems[0]['price'] ?? false) {
-                $currency = strtolower((string) ($lines[0]['product']['currency'] ?? $defaultCurrency));
-            }
-            $lineItems[] = [
-                'price_data' => [
-                    'currency' => $currency,
-                    'unit_amount' => $shippingCents,
-                    'product_data' => [
-                        'name' => 'Shipping',
-                        'description' => 'Flat-rate shipping',
-                    ],
-                ],
-                'quantity' => 1,
-            ];
+        return $lineItems;
+    }
+
+    /**
+     * @param list<array<string, mixed>> $lineItems
+     * @param list<array{product: array<string, mixed>, qty: int}> $lines
+     */
+    private function appendFeeLine(
+        array &$lineItems,
+        array $lines,
+        string $defaultCurrency,
+        int $amountCents,
+        string $name,
+        string $description,
+    ): void {
+        if ($amountCents <= 0 || $lineItems === []) {
+            return;
         }
 
+        $currency = strtolower($defaultCurrency);
+        if (isset($lineItems[0]['price'])) {
+            $currency = strtolower((string) ($lines[0]['product']['currency'] ?? $defaultCurrency));
+        }
+
+        $lineItems[] = [
+            'price_data' => [
+                'currency' => $currency,
+                'unit_amount' => $amountCents,
+                'product_data' => [
+                    'name' => $name,
+                    'description' => $description,
+                ],
+            ],
+            'quantity' => 1,
+        ];
+    }
+
+    /**
+     * @param list<array<string, mixed>> $lineItems
+     * @param array{coupon?: string, cart?: string, tax_country?: string, reminder_email?: string} $metadata
+     * @return array<string, mixed>
+     */
+    private function payload(array $lineItems, string $mode, array $metadata): array
+    {
         $meta = [];
         if (($metadata['coupon'] ?? '') !== '') {
             $meta['gspot_coupon'] = substr((string) $metadata['coupon'], 0, 32);
@@ -87,9 +160,15 @@ final class StripeCheckout
         if (($metadata['cart'] ?? '') !== '') {
             $meta['gspot_cart'] = substr((string) $metadata['cart'], 0, 500);
         }
+        if (($metadata['tax_country'] ?? '') !== '') {
+            $meta['gspot_tax_country'] = substr((string) $metadata['tax_country'], 0, 8);
+        }
+        if (($metadata['reminder_email'] ?? '') !== '') {
+            $meta['gspot_reminder_email'] = substr((string) $metadata['reminder_email'], 0, 120);
+        }
 
         $payload = [
-            'mode' => 'payment',
+            'mode' => $mode,
             'line_items' => $lineItems,
             'success_url' => $this->successUrl,
             'cancel_url' => $this->cancelUrl,
@@ -99,6 +178,6 @@ final class StripeCheckout
             $payload['metadata'] = $meta;
         }
 
-        return Session::create($payload);
+        return $payload;
     }
 }

@@ -56,6 +56,9 @@ HTML;
         $cur = strtoupper($order['currency'] ?? 'aud');
         $coupon = htmlspecialchars($order['coupon'] ?? '');
         $couponRow = $coupon !== '' ? "<tr><th>Coupon</th><td><code>{$coupon}</code></td></tr>" : '';
+        $tax = htmlspecialchars($order['tax_country'] ?? '');
+        $taxRow = $tax !== '' ? "<tr><th>Tax region</th><td>{$tax}</td></tr>" : '';
+        $billing = htmlspecialchars($order['billing_mode'] ?? 'payment');
 
         $cartRows = '';
         $cartJson = (string) ($order['cart_snapshot'] ?? '');
@@ -111,7 +114,9 @@ HTML;
   <tr><th>Session</th><td><code>{$id}</code></td></tr>
   <tr><th>Email</th><td>{$email}</td></tr>
   <tr><th>Total</th><td>{$cur} {$amt}</td></tr>
+  <tr><th>Mode</th><td>{$billing}</td></tr>
   {$couponRow}
+  {$taxRow}
 </table>
 <h2>Cart snapshot</h2>
 <table class="admin-table"><thead><tr><th>Product</th><th>Slug</th><th>Qty</th></tr></thead><tbody>{$cartRows}</tbody></table>
@@ -175,6 +180,7 @@ HTML;
         $stripePrice = htmlspecialchars($product['stripe_price_id'] ?? '');
         $downloadFile = htmlspecialchars($product['download_file'] ?? '');
         $shipRequired = ($product['ship_required'] ?? true) ? 'checked' : '';
+        $billing = htmlspecialchars($product['billing_type'] ?? 'one_time');
         $active = ($product['active'] ?? true) ? 'checked' : '';
         $stockVal = array_key_exists('stock', $product) && $product['stock'] !== null
             ? (string) (int) $product['stock']
@@ -206,6 +212,12 @@ HTML;
     <div class="form-group"><label>Image URL/path</label><input name="image" value="{$image}" placeholder="/media/product.png"></div>
     <div class="form-group"><label>Stripe Price ID (optional)</label><input name="stripe_price_id" value="{$stripePrice}" placeholder="price_..."></div>
     <div class="form-group"><label>Stock (blank = unlimited)</label><input name="stock" value="{$stockVal}" type="number" min="0" step="1"></div>
+    <div class="form-group"><label>Billing</label>
+      <select name="billing_type">
+        <option value="one_time" {$this->selected($billing, 'one_time')}>One-time</option>
+        <option value="subscription" {$this->selected($billing, 'subscription')}>Subscription (Stripe Price ID required)</option>
+      </select>
+    </div>
     <div class="form-group"><label>Digital file (relative to product folder)</label><input name="download_file" value="{$downloadFile}" placeholder="supporter-pack.txt"></div>
     <div class="form-group"><label><input type="checkbox" name="ship_required" value="1" {$shipRequired}> Requires shipping (flat rate)</label></div>
     <div class="form-group"><label><input type="checkbox" name="active" value="1" {$active}> Active</label></div>

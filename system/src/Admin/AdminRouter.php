@@ -848,6 +848,7 @@ HTML;
             'stock' => $this->commerceStockInput($request),
             'download_file' => (string) $request->request->get('download_file', ''),
             'ship_required' => $request->request->has('ship_required'),
+            'billing_type' => (string) $request->request->get('billing_type', 'one_time'),
             'active' => $request->request->has('active'),
         ]);
 

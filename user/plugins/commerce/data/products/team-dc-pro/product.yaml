@@ -1,0 +1,10 @@
+slug: team-dc-pro
+title: Team DC Pro (monthly)
+description: Subscription tier for pattern drops and commerce labs. Requires Stripe recurring Price ID.
+price_cents: 900
+currency: aud
+image: ''
+active: false
+stripe_price_id: ''
+billing_type: subscription
+ship_required: false
