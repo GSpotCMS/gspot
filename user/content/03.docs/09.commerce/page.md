@@ -45,6 +45,14 @@ stripe listen --forward-to localhost:8080/commerce/webhook/stripe
 - Apply codes on the **cart** page before checkout. Stripe **promotion codes** are also enabled at Checkout.
 - Product **stock** is optional in admin (blank = unlimited). Webhooks decrement stock using cart metadata.
 
+## Digital downloads
+
+Products can set `download_file` (path inside the product folder). After a paid webhook, customers get signed download links on the success page (token in `data/download_grants/`).
+
+## Shipping
+
+Configure `flat_shipping_cents` in the commerce plugin config. Applied when any cart line has `ship_required: true` (default for physical goods).
+
 ## Receipts
 
 Paid orders write a plain-text receipt to `data/receipts/`. Set `COMMERCE_NOTIFY_EMAIL` to also `mail()` the shop owner.

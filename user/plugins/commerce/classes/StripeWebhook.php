@@ -18,6 +18,7 @@ final class StripeWebhook
         private readonly ?ProductRegistry $products = null,
         private readonly ?CouponRegistry $coupons = null,
         private readonly ?OrderReceiptNotifier $notifier = null,
+        private readonly ?DigitalFulfillment $digital = null,
     ) {
         if ($this->secretKey !== '') {
             Stripe::setApiKey($this->secretKey);
@@ -72,6 +73,10 @@ final class StripeWebhook
             'cart_snapshot' => $cartJson,
             'created' => date('c', (int) ($session->created ?? time())),
         ];
+
+        if ($this->digital !== null && $cartJson !== '') {
+            $order['downloads'] = $this->digital->grantForCart($id, $cartJson);
+        }
 
         $this->orders->save($id, $order);
         $this->fulfillInventory($cartJson);

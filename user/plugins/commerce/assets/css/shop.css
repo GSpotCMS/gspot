@@ -65,6 +65,9 @@
 .commerce-total { font-size: 1.15rem; margin-top: 0.5rem; }
 .commerce-sold-out { color: hsl(0 70% 65%); font-weight: 600; }
 .commerce-stock { font-size: 0.85rem; opacity: 0.85; margin-top: 0.35rem; }
+.commerce-downloads { margin-top: 1.5rem; text-align: left; max-width: 24rem; margin-inline: auto; }
+.commerce-downloads ul { list-style: none; padding: 0; }
+.commerce-downloads a { color: var(--accent, hsl(300 85% 65%)); font-weight: 600; }
 .commerce-embed-card button {
   background: var(--accent, hsl(300 85% 55%));
   border: 0;

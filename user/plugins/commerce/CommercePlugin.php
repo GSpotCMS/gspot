@@ -6,9 +6,11 @@ namespace GSpot\UserPlugins\Commerce;
 
 use GSpot\Plugin\AbstractPlugin;
 use GSpot\Router\Page;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpFoundation\ResponseHeaderBag;
 
 class CommercePlugin extends AbstractPlugin
 {
@@ -25,6 +27,8 @@ class CommercePlugin extends AbstractPlugin
         require_once __DIR__ . '/classes/CouponRegistry.php';
         require_once __DIR__ . '/classes/DiscountCalculator.php';
         require_once __DIR__ . '/classes/OrderReceiptNotifier.php';
+        require_once __DIR__ . '/classes/DownloadGrantRegistry.php';
+        require_once __DIR__ . '/classes/DigitalFulfillment.php';
 
         $this->app->renderer()->addViewPath(__DIR__ . '/views');
         $this->app->renderer()->share('commerceCss', '/plugin-assets/commerce/css/shop.css');
@@ -82,6 +86,7 @@ HTML;
             $path === '/commerce/success' => $this->success($request),
             $path === '/commerce/webhook/stripe' && $request->isMethod('POST') => $this->stripeWebhook($request),
             str_starts_with($path, '/commerce/product/') => $this->product($path),
+            str_starts_with($path, '/commerce/download/') => $this->downloadFile($path),
             default => null,
         };
     }
@@ -131,12 +136,14 @@ HTML;
     private function cartPage(Request $request): Response
     {
         $coupon = $this->cart()->appliedCoupon();
+        $flatShip = $this->flatShippingCents();
 
         return new Response($this->renderView('cart', [
             'lines' => $this->cart()->lines(),
             'subtotal_cents' => $this->cart()->subtotalCents(),
             'discount_cents' => $this->cart()->discountCents(),
-            'total_cents' => $this->cart()->totalCents(),
+            'shipping_cents' => $this->cart()->shippingCents($flatShip),
+            'total_cents' => $this->cart()->totalCents($flatShip),
             'coupon' => $coupon,
             'stripe_ready' => $this->stripe()->isConfigured(),
             'site' => $this->siteData(),
@@ -172,11 +179,14 @@ HTML;
     {
         $error = $this->cart()->applyCoupon((string) $request->request->get('code', ''));
         if ($error !== null) {
+            $flatShip = $this->flatShippingCents();
+
             return new Response($this->renderView('cart', [
                 'lines' => $this->cart()->lines(),
                 'subtotal_cents' => $this->cart()->subtotalCents(),
                 'discount_cents' => $this->cart()->discountCents(),
-                'total_cents' => $this->cart()->totalCents(),
+                'shipping_cents' => $this->cart()->shippingCents($flatShip),
+                'total_cents' => $this->cart()->totalCents($flatShip),
                 'coupon' => $this->cart()->appliedCoupon(),
                 'stripe_ready' => $this->stripe()->isConfigured(),
                 'error' => $error,
@@ -209,6 +219,7 @@ HTML;
                 $lines = (new DiscountCalculator())->applyToLines($lines, $discount);
             }
 
+            $flatShip = $this->flatShippingCents();
             $session = $this->stripe()->createSession(
                 $lines,
                 $this->defaultCurrency(),
@@ -216,6 +227,7 @@ HTML;
                     'coupon' => (string) ($coupon['code'] ?? ''),
                     'cart' => $cartSnap,
                 ],
+                $this->cart()->shippingCents($flatShip),
             );
             $this->cart()->clear();
             $this->cart()->removeCoupon();
@@ -227,17 +239,43 @@ HTML;
 
             return new RedirectResponse($url);
         } catch (\Throwable $e) {
+            $flatShip = $this->flatShippingCents();
+
             return new Response($this->renderView('cart', [
                 'lines' => $this->cart()->lines(),
                 'subtotal_cents' => $this->cart()->subtotalCents(),
                 'discount_cents' => $this->cart()->discountCents(),
-                'total_cents' => $this->cart()->totalCents(),
+                'shipping_cents' => $this->cart()->shippingCents($flatShip),
+                'total_cents' => $this->cart()->totalCents($flatShip),
                 'coupon' => $this->cart()->appliedCoupon(),
                 'stripe_ready' => $this->stripe()->isConfigured(),
                 'error' => $e->getMessage(),
                 'site' => $this->siteData(),
             ]), 502);
         }
+    }
+
+    private function downloadFile(string $path): Response
+    {
+        $token = basename($path);
+        $grant = $this->downloadGrants()->redeem($token);
+        if ($grant === null) {
+            return new Response('Download link expired or invalid.', 410);
+        }
+
+        $slug = (string) ($grant['slug'] ?? '');
+        $file = $this->registry()->resolveDownloadPath($slug);
+        if ($file === null) {
+            return new Response('Digital file not found.', 404);
+        }
+
+        $response = new BinaryFileResponse($file);
+        $response->setContentDisposition(
+            ResponseHeaderBag::DISPOSITION_ATTACHMENT,
+            basename($file),
+        );
+
+        return $response;
     }
 
     private function success(Request $request): Response
@@ -262,6 +300,7 @@ HTML;
                 $this->registry(),
                 $this->coupons(),
                 $this->receiptNotifier(),
+                $this->digitalFulfillment(),
             );
             $handler->handle($request->getContent(), $request->headers->get('Stripe-Signature'));
 
@@ -301,6 +340,29 @@ HTML;
     private function defaultCurrency(): string
     {
         return strtolower((string) ($this->config['config']['currency'] ?? 'aud'));
+    }
+
+    private function flatShippingCents(): int
+    {
+        return max(0, (int) ($this->config['config']['flat_shipping_cents'] ?? 0));
+    }
+
+    private function downloadGrants(): DownloadGrantRegistry
+    {
+        $rel = (string) ($this->config['config']['download_grants_path'] ?? 'data/download_grants');
+
+        return new DownloadGrantRegistry(__DIR__ . '/' . ltrim($rel, '/'));
+    }
+
+    private function digitalFulfillment(): DigitalFulfillment
+    {
+        return new DigitalFulfillment(
+            $this->registry(),
+            $this->downloadGrants(),
+            rtrim((string) $this->app->config()->get('site.url', 'http://localhost:8080'), '/'),
+            max(1, (int) ($this->config['config']['download_ttl_days'] ?? 14)),
+            max(1, (int) ($this->config['config']['download_max_hits'] ?? 10)),
+        );
     }
 
     private function productsDir(): string

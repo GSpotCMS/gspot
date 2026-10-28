@@ -77,10 +77,42 @@ final class ProductRegistry
             'active' => (bool) ($meta['active'] ?? true),
             'stripe_price_id' => (string) ($meta['stripe_price_id'] ?? ''),
             'stock' => $this->normalizeStock($meta['stock'] ?? null),
+            'download_file' => (string) ($meta['download_file'] ?? ''),
+            'ship_required' => (bool) ($meta['ship_required'] ?? true),
             'updated' => date('c'),
         ];
 
         file_put_contents($dir . '/product.yaml', Yaml::dump($product, 2));
+    }
+
+    public function resolveDownloadPath(string $slug): ?string
+    {
+        $slug = PathGuard::sanitizeSlug($slug);
+        if ($slug === '') {
+            return null;
+        }
+
+        $product = $this->get($slug);
+        if ($product === null) {
+            return null;
+        }
+
+        $file = trim((string) ($product['download_file'] ?? ''));
+        if ($file === '') {
+            return null;
+        }
+
+        $dir = PathGuard::resolveUnder($this->productsDir, $slug);
+        if ($dir === null) {
+            return null;
+        }
+
+        $path = PathGuard::resolveUnder($dir, $file);
+        if ($path === null || !is_file($path)) {
+            return null;
+        }
+
+        return $path;
     }
 
     public function availableStock(string $slug): ?int

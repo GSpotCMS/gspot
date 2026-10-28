@@ -58,6 +58,16 @@ final class OrderReceiptNotifier
         }
 
         $couponLine = $coupon !== '' ? "Coupon: {$coupon}\n" : '';
+        $downloadBlock = '';
+        foreach ($order['downloads'] ?? [] as $dl) {
+            if (!is_array($dl)) {
+                continue;
+            }
+            $downloadBlock .= '  - ' . ($dl['title'] ?? 'File') . ': ' . ($dl['url'] ?? '') . "\n";
+        }
+        if ($downloadBlock !== '') {
+            $downloadBlock = "Downloads:\n{$downloadBlock}";
+        }
 
         return <<<TEXT
 GSpot Commerce receipt
@@ -67,6 +77,7 @@ Total: {$cur} {$total}
 {$couponLine}
 Items:
 {$lines}
+{$downloadBlock}
 Filed at: {$order['created']}
 TEXT;
     }

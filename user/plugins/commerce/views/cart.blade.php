@@ -54,6 +54,9 @@
             @endif
         </section>
 
+        @if(!empty($shipping_cents))
+            <p class="commerce-subtotal"><strong>Shipping:</strong> {{ number_format($shipping_cents / 100, 2) }}</p>
+        @endif
         <p class="commerce-total"><strong>Total:</strong> {{ number_format(($total_cents ?? $subtotal_cents) / 100, 2) }}</p>
 
         @if($stripe_ready)

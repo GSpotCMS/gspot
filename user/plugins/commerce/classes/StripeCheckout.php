@@ -28,7 +28,7 @@ final class StripeCheckout
      * @param list<array{product: array<string, mixed>, qty: int}> $lines
      * @param array{coupon?: string, cart?: string} $metadata
      */
-    public function createSession(array $lines, string $defaultCurrency, array $metadata = []): Session
+    public function createSession(array $lines, string $defaultCurrency, array $metadata = [], int $shippingCents = 0): Session
     {
         if (!$this->isConfigured()) {
             throw new \RuntimeException('Stripe secret key not configured');
@@ -59,6 +59,24 @@ final class StripeCheckout
                     ],
                 ],
                 'quantity' => $qty,
+            ];
+        }
+
+        if ($shippingCents > 0 && $lineItems !== []) {
+            $currency = strtolower($defaultCurrency);
+            if ($lineItems[0]['price'] ?? false) {
+                $currency = strtolower((string) ($lines[0]['product']['currency'] ?? $defaultCurrency));
+            }
+            $lineItems[] = [
+                'price_data' => [
+                    'currency' => $currency,
+                    'unit_amount' => $shippingCents,
+                    'product_data' => [
+                        'name' => 'Shipping',
+                        'description' => 'Flat-rate shipping',
+                    ],
+                ],
+                'quantity' => 1,
             ];
         }
 

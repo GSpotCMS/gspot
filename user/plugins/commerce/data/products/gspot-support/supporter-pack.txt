@@ -1,0 +1,10 @@
+GSpot Groundswell — Supporter Pack (demo digital)
+===============================================
+
+Thanks for fueling the village.
+
+- Commerce plugin: flat-file, Stripe, Blade storefront
+- MUD patterns: ship pages without the bloat
+- Find the Spot. Hit it. Ship it.
+
+Team DC · FutureVision Labs

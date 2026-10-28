@@ -13,6 +13,18 @@
         @if(!empty($order['email']))
             <p>Receipt email: {{ $order['email'] }}</p>
         @endif
+        @if(!empty($order['downloads']))
+            <div class="commerce-downloads">
+                <h2>Your downloads</h2>
+                <ul>
+                @foreach($order['downloads'] as $dl)
+                    @if(is_array($dl))
+                        <li><a href="{{ $dl['url'] ?? '#' }}">{{ $dl['title'] ?? 'Download' }}</a></li>
+                    @endif
+                @endforeach
+                </ul>
+            </div>
+        @endif
     @elseif(!empty($session_id))
         <p>Session {{ $session_id }} — webhook will file the order receipt shortly.</p>
     @endif

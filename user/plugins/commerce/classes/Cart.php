@@ -109,9 +109,24 @@ final class Cart
         return (new DiscountCalculator())->discountCents($this->subtotalCents(), $coupon);
     }
 
-    public function totalCents(): int
+    public function shippingCents(int $flatRateCents): int
     {
-        return max(0, $this->subtotalCents() - $this->discountCents());
+        if ($flatRateCents <= 0) {
+            return 0;
+        }
+
+        foreach ($this->lines() as $line) {
+            if (($line['product']['ship_required'] ?? true) === true) {
+                return $flatRateCents;
+            }
+        }
+
+        return 0;
+    }
+
+    public function totalCents(int $flatShippingCents = 0): int
+    {
+        return max(0, $this->subtotalCents() - $this->discountCents() + $this->shippingCents($flatShippingCents));
     }
 
     /** @return list<array{slug: string, qty: int}> */

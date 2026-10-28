@@ -1,5 +1,5 @@
 name: commerce
-version: 0.3.0
+version: 0.4.0
 description: Flat-file products, session cart, Stripe Checkout. No database required.
 author: FutureVision Labs · Team DC
 enabled: true
@@ -13,6 +13,10 @@ config:
   coupons_path: data/coupons
   receipts_path: data/receipts
   notify_email_env: COMMERCE_NOTIFY_EMAIL
+  flat_shipping_cents: 1200
+  download_grants_path: data/download_grants
+  download_ttl_days: 14
+  download_max_hits: 10
   shop_path: /commerce/shop
   currency: aud
   stripe_secret_env: STRIPE_SECRET_KEY

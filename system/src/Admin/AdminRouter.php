@@ -140,6 +140,7 @@ class AdminRouter
             $this->route('POST', '/commerce/products/save', fn($r) => $this->commerceProductSave($r));
             $this->route('POST', '/commerce/products/delete', fn($r) => $this->commerceProductDelete($r));
             $this->route('GET', '/commerce/orders', fn($r) => $this->commerceOrdersList($r));
+            $this->route('GET', '/commerce/orders/view', fn($r) => $this->commerceOrderView($r));
             $this->route('GET', '/commerce/coupons', fn($r) => $this->commerceCouponsList($r));
             $this->route('GET', '/commerce/coupons/new', fn($r) => $this->commerceCouponEdit($r));
             $this->route('GET', '/commerce/coupons/edit', fn($r) => $this->commerceCouponEdit($r));
@@ -845,6 +846,8 @@ HTML;
             'image' => $request->request->get('image', ''),
             'stripe_price_id' => $request->request->get('stripe_price_id', ''),
             'stock' => $this->commerceStockInput($request),
+            'download_file' => (string) $request->request->get('download_file', ''),
+            'ship_required' => $request->request->has('ship_required'),
             'active' => $request->request->has('active'),
         ]);
 
@@ -865,6 +868,15 @@ HTML;
     {
         return new Response($this->render('commerce-admin', [
             'body' => $this->commerceAdmin()->ordersListContent(),
+        ]));
+    }
+
+    private function commerceOrderView(Request $request): Response
+    {
+        $id = (string) $request->query->get('id', '');
+
+        return new Response($this->render('commerce-admin', [
+            'body' => $this->commerceAdmin()->orderDetailContent($id),
         ]));
     }
 

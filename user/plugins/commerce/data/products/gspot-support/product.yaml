@@ -6,3 +6,5 @@ currency: aud
 image: ''
 active: true
 stripe_price_id: ''
+download_file: supporter-pack.txt
+ship_required: false

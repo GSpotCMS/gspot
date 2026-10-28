@@ -63,6 +63,23 @@ final class ProductRegistryTest extends TestCase
         $this->assertFalse($registry->adjustStock('limited', -5));
     }
 
+    public function testResolveDownloadPath(): void
+    {
+        $registry = new ProductRegistry($this->dir);
+        $slugDir = $this->dir . '/digital-item';
+        mkdir($slugDir, 0755, true);
+        file_put_contents($slugDir . '/bonus.txt', 'hi');
+        $registry->save('digital-item', [
+            'title' => 'Digital',
+            'price_cents' => 100,
+            'download_file' => 'bonus.txt',
+        ]);
+
+        $path = $registry->resolveDownloadPath('digital-item');
+        $this->assertNotNull($path);
+        $this->assertStringEndsWith('bonus.txt', $path);
+    }
+
     private function removeDir(string $dir): void
     {
         foreach (scandir($dir) ?: [] as $item) {

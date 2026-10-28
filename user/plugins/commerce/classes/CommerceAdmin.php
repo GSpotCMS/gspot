@@ -24,19 +24,101 @@ final class CommerceAdmin
             $cur = strtoupper($o['currency'] ?? 'aud');
             $status = htmlspecialchars($o['status'] ?? '');
             $created = htmlspecialchars($o['created'] ?? '');
-            $rows .= "<tr><td><code>{$id}</code></td><td>{$email}</td><td>{$cur} {$amt}</td><td>{$status}</td><td>{$created}</td></tr>";
+            $view = $prefix . '/commerce/orders/view?id=' . rawurlencode($o['id'] ?? '');
+            $rows .= "<tr><td><code>{$id}</code></td><td>{$email}</td><td>{$cur} {$amt}</td><td>{$status}</td><td>{$created}</td><td><a class=\"btn btn-sm\" href=\"{$view}\">View</a></td></tr>";
         }
         if ($rows === '') {
-            $rows = '<tr><td colspan="5" class="empty">No orders yet. Complete a Stripe test checkout with webhooks configured.</td></tr>';
+            $rows = '<tr><td colspan="6" class="empty">No orders yet. Complete a Stripe test checkout with webhooks configured.</td></tr>';
         }
 
         return <<<HTML
 <h1>🛒 Commerce — Orders</h1>
 <p><a class="btn" href="{$prefix}/commerce/products">← Products</a></p>
 <table class="admin-table">
-  <thead><tr><th>Session</th><th>Email</th><th>Total</th><th>Status</th><th>Created</th></tr></thead>
+  <thead><tr><th>Session</th><th>Email</th><th>Total</th><th>Status</th><th>Created</th><th></th></tr></thead>
   <tbody>{$rows}</tbody>
 </table>
+HTML;
+    }
+
+    public function orderDetailContent(string $orderId): string
+    {
+        $prefix = $this->adminPrefix();
+        require_once $this->app->rootPath() . '/user/plugins/commerce/classes/OrderRegistry.php';
+        $order = (new OrderRegistry($this->app->rootPath() . '/user/plugins/commerce/data/orders'))->get($orderId);
+        if ($order === null) {
+            return '<h1>Order not found</h1><p><a class="btn" href="' . $prefix . '/commerce/orders">Back</a></p>';
+        }
+
+        $id = htmlspecialchars($order['id'] ?? '');
+        $email = htmlspecialchars($order['email'] ?? '—');
+        $amt = number_format(((int) ($order['amount_total'] ?? 0)) / 100, 2);
+        $cur = strtoupper($order['currency'] ?? 'aud');
+        $coupon = htmlspecialchars($order['coupon'] ?? '');
+        $couponRow = $coupon !== '' ? "<tr><th>Coupon</th><td><code>{$coupon}</code></td></tr>" : '';
+
+        $cartRows = '';
+        $cartJson = (string) ($order['cart_snapshot'] ?? '');
+        $cart = json_decode($cartJson, true);
+        if (is_array($cart)) {
+            foreach ($cart as $row) {
+                if (!is_array($row)) {
+                    continue;
+                }
+                $slug = htmlspecialchars((string) ($row['slug'] ?? ''));
+                $qty = (int) ($row['qty'] ?? 0);
+                $product = $this->registry()->get((string) ($row['slug'] ?? ''));
+                $title = htmlspecialchars($product['title'] ?? $slug);
+                $cartRows .= "<tr><td>{$title}</td><td><code>{$slug}</code></td><td>{$qty}</td></tr>";
+            }
+        }
+        if ($cartRows === '') {
+            $cartRows = '<tr><td colspan="3" class="empty">No cart snapshot (legacy order)</td></tr>';
+        }
+
+        $dlRows = '';
+        foreach ($order['downloads'] ?? [] as $dl) {
+            if (!is_array($dl)) {
+                continue;
+            }
+            $title = htmlspecialchars($dl['title'] ?? 'Download');
+            $url = htmlspecialchars($dl['url'] ?? '');
+            $token = htmlspecialchars($dl['token'] ?? '');
+            $dlRows .= "<tr><td>{$title}</td><td><code>{$token}</code></td><td><a href=\"{$url}\" target=\"_blank\" rel=\"noopener\">Customer link</a></td></tr>";
+        }
+        if ($dlRows === '') {
+            $dlRows = '<tr><td colspan="3" class="empty">No digital grants</td></tr>';
+        }
+
+        $stripeLines = '';
+        foreach ($order['line_items'] ?? [] as $item) {
+            if (!is_array($item)) {
+                continue;
+            }
+            $desc = htmlspecialchars($item['description'] ?? '');
+            $qty = (int) ($item['quantity'] ?? 1);
+            $sub = number_format(((int) ($item['amount_subtotal'] ?? 0)) / 100, 2);
+            $stripeLines .= "<tr><td>{$desc}</td><td>{$qty}</td><td>{$cur} {$sub}</td></tr>";
+        }
+        if ($stripeLines === '') {
+            $stripeLines = '<tr><td colspan="3" class="empty">No Stripe line items</td></tr>';
+        }
+
+        return <<<HTML
+<h1>🛒 Order</h1>
+<p><a class="btn" href="{$prefix}/commerce/orders">← Orders</a></p>
+<table class="admin-table">
+  <tr><th>Session</th><td><code>{$id}</code></td></tr>
+  <tr><th>Email</th><td>{$email}</td></tr>
+  <tr><th>Total</th><td>{$cur} {$amt}</td></tr>
+  {$couponRow}
+</table>
+<h2>Cart snapshot</h2>
+<table class="admin-table"><thead><tr><th>Product</th><th>Slug</th><th>Qty</th></tr></thead><tbody>{$cartRows}</tbody></table>
+<h2>Stripe line items</h2>
+<table class="admin-table"><thead><tr><th>Description</th><th>Qty</th><th>Subtotal</th></tr></thead><tbody>{$stripeLines}</tbody></table>
+<h2>Digital downloads</h2>
+<table class="admin-table"><thead><tr><th>Title</th><th>Token</th><th>Link</th></tr></thead><tbody>{$dlRows}</tbody></table>
 HTML;
     }
 
@@ -91,6 +173,8 @@ HTML;
         $currency = htmlspecialchars($product['currency'] ?? 'aud');
         $image = htmlspecialchars($product['image'] ?? '');
         $stripePrice = htmlspecialchars($product['stripe_price_id'] ?? '');
+        $downloadFile = htmlspecialchars($product['download_file'] ?? '');
+        $shipRequired = ($product['ship_required'] ?? true) ? 'checked' : '';
         $active = ($product['active'] ?? true) ? 'checked' : '';
         $stockVal = array_key_exists('stock', $product) && $product['stock'] !== null
             ? (string) (int) $product['stock']
@@ -122,6 +206,8 @@ HTML;
     <div class="form-group"><label>Image URL/path</label><input name="image" value="{$image}" placeholder="/media/product.png"></div>
     <div class="form-group"><label>Stripe Price ID (optional)</label><input name="stripe_price_id" value="{$stripePrice}" placeholder="price_..."></div>
     <div class="form-group"><label>Stock (blank = unlimited)</label><input name="stock" value="{$stockVal}" type="number" min="0" step="1"></div>
+    <div class="form-group"><label>Digital file (relative to product folder)</label><input name="download_file" value="{$downloadFile}" placeholder="supporter-pack.txt"></div>
+    <div class="form-group"><label><input type="checkbox" name="ship_required" value="1" {$shipRequired}> Requires shipping (flat rate)</label></div>
     <div class="form-group"><label><input type="checkbox" name="active" value="1" {$active}> Active</label></div>
   </div>
   <button type="submit" class="btn btn-primary">Save</button>
