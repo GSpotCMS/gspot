@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.1.2 — 2026-10-28
+
+- **Dev server:** load Composer before theme asset routes; serve CSS/JS via `ConfigManager` (fixes unstyled sites on non-starter themes).
+- **Dev server:** `process-timeout: 0` for `composer serve`; add `scripts/serve.ps1`.
+- **Admin:** **View site** sidebar link, dashboard shortcut, per-page **View** / **View page** links.
+
 ## 1.1.1 — 2026-10-28
 
 - Fix **synthwave** `theme.yaml` parse error (unclosed quote on `sunset_strip.muted`).

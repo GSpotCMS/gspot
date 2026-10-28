@@ -32,6 +32,18 @@ composer serve
 
 Visit `http://localhost:8080` · admin at `/gspot-admin/` (change the default password immediately).
 
+### Dev server (don’t let it die at 5 minutes)
+
+`composer serve` runs until you press **Ctrl+C**. This repo sets **`process-timeout: 0`** so Composer does not kill PHP after 300 seconds.
+
+On Windows, you can also run (same thing, no Composer wrapper):
+
+```powershell
+.\scripts\serve.ps1
+```
+
+Or: `php bin/gspot serve`
+
 ## Manual Installation
 
 1. Clone or download the repository

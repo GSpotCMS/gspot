@@ -12,6 +12,8 @@ GSpot CMS includes a full web admin panel for managing your site without touchin
 
 Navigate to `/gspot-admin/` (configurable prefix in `system.yaml`).
 
+Use **↗ View site** in the sidebar (or **View** on a page row) to open the public site in a new tab while you edit.
+
 **Default credentials:** `admin` / `gspot-admin`
 
 Change this immediately after first login.

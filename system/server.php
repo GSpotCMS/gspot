@@ -11,6 +11,8 @@ declare(strict_types=1);
 
 define('GSPOT_ROOT', dirname(__DIR__));
 
+require GSPOT_ROOT . '/vendor/autoload.php';
+
 $uri = urldecode(parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH));
 
 // Serve static files directly
@@ -19,18 +21,17 @@ if ($uri !== '/' && file_exists($publicFile) && is_file($publicFile)) {
     return false;
 }
 
-// Serve theme assets
+// Serve theme assets (/assets/* → user/themes/{active}/assets/*)
 if (str_starts_with($uri, '/assets/')) {
-    $themePath = GSPOT_ROOT . '/user/themes';
-    // Determine active theme from config
-    $configFile = GSPOT_ROOT . '/user/config/system.yaml';
-    $theme = 'starter';
-    if (file_exists($configFile)) {
-        $config = \Symfony\Component\Yaml\Yaml::parseFile($configFile);
-        $theme = $config['theme'] ?? 'starter';
-    }
-    $assetFile = $themePath . '/' . $theme . $uri;
-    if (file_exists($assetFile) && is_file($assetFile)) {
+    $config = new \GSpot\Config\ConfigManager(
+        GSPOT_ROOT . '/system/config',
+        GSPOT_ROOT . '/user/config'
+    );
+    $theme = (string) $config->get('system.theme', 'starter');
+    $relative = ltrim(substr($uri, strlen('/assets/')), '/');
+    $assetFile = GSPOT_ROOT . '/user/themes/' . $theme . '/assets/' . $relative;
+
+    if ($relative !== '' && file_exists($assetFile) && is_file($assetFile)) {
         $mimes = [
             'css' => 'text/css',
             'js' => 'application/javascript',
@@ -47,6 +48,11 @@ if (str_starts_with($uri, '/assets/')) {
         readfile($assetFile);
         return;
     }
+
+    http_response_code(404);
+    header('Content-Type: text/plain; charset=UTF-8');
+    echo 'Theme asset not found.';
+    return;
 }
 
 // Serve plugin assets
@@ -81,9 +87,6 @@ if (str_starts_with($uri, '/media/')) {
         return;
     }
 }
-
-// Bootstrap the application
-require GSPOT_ROOT . '/vendor/autoload.php';
 
 use GSpot\Application;
 use GSpot\Admin\AdminRouter;

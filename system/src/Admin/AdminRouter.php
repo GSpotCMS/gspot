@@ -447,6 +447,7 @@ class AdminRouter
     private function render(string $template, array $data = []): string
     {
         $data['prefix'] = $this->prefix;
+        $data['siteHomeUrl'] = $this->publicPageUrl('home');
         $data['user'] = $this->auth->currentUser();
         $data['csrf'] = Csrf::field();
         $method = 'render' . ucfirst($template);
@@ -460,7 +461,8 @@ class AdminRouter
 
     private function adminLayout(string $page, array $data): string
     {
-        $nav = $this->renderNav($data['prefix']);
+        $siteHome = htmlspecialchars($data['siteHomeUrl'] ?? '/', ENT_QUOTES, 'UTF-8');
+        $nav = $this->renderNav($data['prefix'], $siteHome);
         $content = $this->renderPage($page, $data);
         $user = htmlspecialchars($data['user'] ?? 'admin');
         $javabeanCss = $this->getJavaBeanCss();
@@ -497,7 +499,7 @@ class AdminRouter
 HTML;
     }
 
-    private function renderNav(string $prefix): string
+    private function renderNav(string $prefix, string $siteHomeUrl): string
     {
         $items = [
             ['/', 'Dashboard', '◉'],
@@ -515,8 +517,25 @@ HTML;
         foreach ($items as [$path, $label, $icon]) {
             $html .= "<a href=\"{$prefix}{$path}\" class=\"nav-item\">{$icon} {$label}</a>";
         }
+        $html .= "<a href=\"{$siteHomeUrl}\" class=\"nav-item nav-item--view-site\" target=\"_blank\" rel=\"noopener noreferrer\">↗ View site</a>";
         $html .= '</nav>';
         return $html;
+    }
+
+    /** Front-end path for a page slug (home → /). */
+    private function publicPageUrl(string $slug): string
+    {
+        $slug = trim($slug);
+        if ($slug === '' || $slug === 'home') {
+            return '/';
+        }
+
+        $parts = array_map(
+            static fn (string $part): string => rawurlencode($part),
+            explode('/', str_replace('\\', '/', $slug))
+        );
+
+        return '/' . implode('/', $parts);
     }
 
     private function renderPage(string $page, array $data): string
@@ -575,6 +594,7 @@ HTML;
     <h2>Quick Actions</h2>
     <a href="{$data['prefix']}/pages/new" class="btn btn-primary">New Page</a>
     <a href="{$data['prefix']}/media" class="btn">Upload Media</a>
+    <a href="{$data['siteHomeUrl']}" class="btn" target="_blank" rel="noopener noreferrer">View site</a>
 </div>
 HTML;
     }
@@ -587,7 +607,9 @@ HTML;
 
         foreach ($data['pages'] as $page) {
             $title = htmlspecialchars($page->title());
-            $slug = htmlspecialchars($page->slug());
+            $slugRaw = $page->slug();
+            $slug = htmlspecialchars($slugRaw);
+            $viewUrl = htmlspecialchars($this->publicPageUrl($slugRaw), ENT_QUOTES, 'UTF-8');
             $tpl = htmlspecialchars($page->template());
             $html .= <<<HTML
 <tr>
@@ -595,6 +617,7 @@ HTML;
     <td><code>{$slug}</code></td>
     <td>{$tpl}</td>
     <td>
+        <a href="{$viewUrl}" class="btn btn-sm" target="_blank" rel="noopener noreferrer">View</a>
         <a href="{$data['prefix']}/pages/edit?slug={$slug}" class="btn btn-sm">Edit</a>
         <form method="POST" action="{$data['prefix']}/pages/delete" style="display:inline">
             {$data['csrf']}
@@ -617,6 +640,11 @@ HTML;
         $isNew = $data['isNew'] ? '1' : '0';
         $heading = $data['isNew'] ? 'New Page' : 'Edit: ' . $slug;
         $action = $data['isNew'] ? 'new' : 'edit';
+        $viewPageBtn = '';
+        if (!$data['isNew']) {
+            $viewUrl = htmlspecialchars($this->publicPageUrl((string) ($data['slug'] ?? '')), ENT_QUOTES, 'UTF-8');
+            $viewPageBtn = "<a href=\"{$viewUrl}\" class=\"btn\" target=\"_blank\" rel=\"noopener noreferrer\">View page</a>";
+        }
 
         $patternInsert = '';
         $patterns = $data['pagePatterns'] ?? [];
@@ -673,6 +701,7 @@ HTML;
         <textarea name="content" class="code-editor" rows="25">{$content}</textarea>
     </div>
     <button type="submit" class="btn btn-primary">Save Page</button>
+    {$viewPageBtn}
     <a href="{$data['prefix']}/pages" class="btn">Cancel</a>
 </form>
 HTML;
@@ -1478,6 +1507,8 @@ body { font-family: 'Inter', -apple-system, sans-serif; background: var(--bg); c
 .admin-nav { flex: 1; padding: 1rem 0; }
 .nav-item { display: block; padding: 0.7rem 1.5rem; color: var(--muted); text-decoration: none; transition: all 0.2s; }
 .nav-item:hover { color: var(--text); background: rgba(168,85,247,0.1); }
+.nav-item--view-site { margin-top: 0.75rem; padding-top: 1rem; border-top: 1px solid var(--border); color: #06b6d4; }
+.nav-item--view-site:hover { color: #67e8f9; }
 .admin-user { padding: 1rem 1.5rem; border-top: 1px solid var(--border); font-size: 0.875rem; display: flex; justify-content: space-between; align-items: center; }
 .admin-user a { color: var(--secondary); text-decoration: none; }
 .admin-main { margin-left: 240px; padding: 2rem 3rem; flex: 1; }
